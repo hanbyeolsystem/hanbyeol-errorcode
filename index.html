@@ -87,6 +87,24 @@ html, body {
   font-weight: 700;
 }
 
+.toner-btn {
+  background: #00b894;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toner-btn:hover {
+  background: #00896c;
+}
+
 /* ===== 메인 콘텐츠 ===== */
 .main-wrapper {
   display: flex;
@@ -497,6 +515,11 @@ html, body {
     font-size: 1rem;
   }
 
+  .toner-btn {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+
   /* 히어로 섹션 */
   .hero {
     padding: 16px 12px;
@@ -610,6 +633,7 @@ html, body {
           <div style="color: #ffc107; font-size: 0.75rem;">총 에러코드</div>
           <div class="header-stat-num" id="total-count">-</div>
         </div>
+        <a href="./Toner/" class="toner-btn" title="토너/소모품 검색">📦 토너검색</a>
       </div>
     </div>
   </header>

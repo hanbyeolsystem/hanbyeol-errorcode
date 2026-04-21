@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한별시스템 - 토너/소모품 검색</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #00b894;
+  --primary-dark: #00896c;
+  --accent: #ffc107;
+  --bg: #f5f5f5;
+  --card: #fff;
+  --text: #333;
+  --text-light: #666;
+  --border: #ddd;
+}
+
+html, body {
+  font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+}
+
+.container { display: flex; height: 100vh; flex-direction: column; }
+
+/* HEADER */
+.header {
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.header-content {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1400px; margin: 0 auto;
+}
+.header-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+.header-logo { font-size: 1.1rem; font-weight: 700; }
+.header-sub { font-size: 0.75rem; opacity: 0.85; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.header-stat { font-size: 0.85rem; text-align: right; }
+.header-stat-num { font-size: 1rem; font-weight: 700; }
+.nav-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 6px 12px; border-radius: 4px; cursor: pointer;
+  font-size: 0.85rem; text-decoration: none;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* MAIN */
+.main-wrapper { display: flex; flex: 1; overflow: hidden; }
+
+.sidebar {
+  width: 280px; background: #f9f9f9;
+  border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 16px;
+}
+.sidebar-section { margin-bottom: 20px; }
+.sidebar-title {
+  font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: var(--text);
+}
+.sidebar select {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 4px;
+  font-size: 0.85rem; margin-bottom: 8px;
+}
+.filter-btn {
+  width: 100%; padding: 10px;
+  background: var(--primary); color: white; border: none;
+  border-radius: 4px; cursor: pointer;
+  font-weight: 600; margin-bottom: 8px;
+  transition: background 0.2s;
+}
+.filter-btn:hover { background: var(--primary-dark); }
+.filter-reset {
+  width: 100%; padding: 8px;
+  background: transparent; color: var(--text-light);
+  border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.filter-reset:hover { background: var(--border); }
+.stats-section {
+  background: white; padding: 12px; border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.stat-item {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.stat-item:last-child { border-bottom: none; }
+.stat-label { color: var(--text-light); }
+.stat-value { font-weight: 600; color: var(--primary); }
+
+/* CONTENT */
+.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.hero {
+  background: linear-gradient(135deg, #00b894 0%, #00896c 100%);
+  color: white; padding: 24px;
+}
+.hero-content { max-width: 1000px; margin: 0 auto; }
+.hero-title {
+  font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-icon { font-size: 2rem; }
+.hero-subtitle { font-size: 0.95rem; opacity: 0.9; margin-bottom: 20px; }
+
+.search-box {
+  display: grid;
+  grid-template-columns: 180px 180px 180px 1fr 100px;
+  gap: 12px; max-width: 1100px;
+}
+.search-box select, .search-box input {
+  padding: 12px 14px; border: none;
+  border-radius: 6px; font-size: 0.9rem; font-family: inherit;
+}
+.search-box input:focus, .search-box select:focus {
+  outline: 2px solid rgba(255,255,255,0.5);
+}
+.btn-search {
+  padding: 12px 16px; background: var(--accent);
+  color: #222; border: none; border-radius: 6px;
+  font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.btn-search:hover { background: #ffb300; }
+
+/* RESULTS */
+.results-wrapper {
+  flex: 1; overflow-y: auto; padding: 24px;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.results-info { margin-bottom: 16px; font-size: 0.95rem; color: var(--text-light); }
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px; margin-bottom: 20px;
+}
+.toner-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px;
+  cursor: pointer; transition: all 0.2s;
+  border-left: 4px solid var(--primary);
+}
+.toner-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+.toner-code {
+  display: inline-block; background: var(--primary);
+  color: white; padding: 6px 12px;
+  border-radius: 4px; font-weight: 700;
+  font-size: 1rem; margin-bottom: 8px; font-family: monospace;
+}
+.toner-mfr {
+  font-size: 0.75rem; opacity: 0.7;
+  display: inline-block; margin-left: 6px;
+}
+.toner-name {
+  font-size: 1rem; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+.toner-models {
+  font-size: 0.85rem; color: var(--text-light); margin-bottom: 8px;
+}
+.toner-meta {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.toner-tag {
+  display: inline-block;
+  background: #e0f7f1; color: var(--primary);
+  padding: 3px 8px; border-radius: 3px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.toner-tag.color-K { background: #333; color: white; }
+.toner-tag.color-C { background: #00bcd4; color: white; }
+.toner-tag.color-M { background: #e91e63; color: white; }
+.toner-tag.color-Y { background: #ffc107; color: #222; }
+.toner-tag.color-CMYK {
+  background: linear-gradient(90deg,#00bcd4,#e91e63,#ffc107,#333);
+  color: white;
+}
+.toner-tag.type-drum { background: #fff3cd; color: #856404; }
+.toner-tag.type-waste { background: #f8d7da; color: #721c24; }
+.toner-tag.type-other { background: #e9ecef; color: #495057; }
+
+/* DETAIL PANEL */
+.detail-panel {
+  position: fixed; right: 0; top: 0;
+  width: 400px; height: 100vh;
+  background: white; border-left: 1px solid var(--border);
+  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+  z-index: 200;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.detail-panel.active { transform: translateX(0); }
+.detail-header {
+  background: var(--primary); color: white; padding: 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.detail-close {
+  background: rgba(255,255,255,0.2); border: none; color: white;
+  width: 32px; height: 32px; border-radius: 4px;
+  cursor: pointer; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.detail-close:hover { background: rgba(255,255,255,0.3); }
+.detail-content { padding: 20px; flex: 1; }
+.detail-code {
+  font-size: 1.8rem; font-weight: 700;
+  color: var(--primary); margin-bottom: 12px;
+  font-family: monospace; word-break: break-all;
+}
+.detail-name {
+  font-size: 1.1rem; font-weight: 600;
+  color: var(--text); margin-bottom: 16px;
+}
+.detail-meta {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 16px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.detail-meta-item { font-size: 0.85rem; }
+.detail-meta-label { color: var(--text-light); margin-bottom: 4px; }
+.detail-meta-value { font-weight: 600; color: var(--text); }
+.detail-section { margin-bottom: 16px; }
+.detail-section-title {
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;
+}
+.detail-section-content {
+  font-size: 0.9rem; line-height: 1.6; color: var(--text);
+}
+
+/* EMPTY / LOADING */
+.empty-state { padding: 40px 20px; text-align: center; }
+.empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+.empty-text { color: var(--text-light); font-size: 0.95rem; }
+
+/* RESPONSIVE */
+@media (max-width: 1023px) {
+  .sidebar { width: 200px; padding: 12px; }
+  .search-box { grid-template-columns: 1fr 1fr; }
+  .results-grid { grid-template-columns: 1fr; }
+  .detail-panel { width: 350px; }
+}
+
+@media (max-width: 767px) {
+  .sidebar { display: none; }
+  .main-wrapper { flex-direction: column; }
+  .header-content { flex-direction: column; gap: 8px; }
+  .header-left, .header-right { width: 100%; }
+  .header-right { justify-content: space-between; }
+  .header-logo { font-size: 1rem; }
+  .nav-btn { font-size: 0.75rem; padding: 5px 10px; }
+  .hero { padding: 16px 12px; }
+  .hero-title { font-size: 1.3rem; }
+  .hero-icon { font-size: 1.4rem; }
+  .hero-subtitle { font-size: 0.85rem; margin-bottom: 14px; }
+  .search-box { grid-template-columns: 1fr; gap: 8px; max-width: 100%; }
+  .results-wrapper { padding: 12px; max-width: 100%; }
+  .results-grid { grid-template-columns: 1fr; gap: 12px; }
+  .toner-card { padding: 12px; }
+  .detail-panel { width: 100%; transform: translateY(100%); }
+  .detail-panel.active { transform: translateY(0); }
+  .detail-header { padding: 12px; }
+  .detail-content { padding: 16px; }
+  .detail-code { font-size: 1.5rem; }
+  .detail-meta { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header class="header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-logo">🖨️ 한별시스템</div>
+        <div class="header-sub">토너/소모품 검색</div>
+      </div>
+      <div class="header-right">
+        <div class="header-stat">
+          <div style="color: #ffc107; font-size: 0.75rem;">총 부품</div>
+          <div class="header-stat-num" id="total-count">-</div>
+        </div>
+        <a href="../index.html" class="nav-btn">🔍 에러코드</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-wrapper">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">🔍 필터</div>
+        <div class="sidebar-title" style="font-size: 0.8rem; font-weight: normal; margin-top: 10px;">제조사</div>
+        <select id="sidebar-manufacturer">
+          <option value="">전체</option>
+        </select>
+        <div class="sidebar-title" style="font-size: 0.8rem; font-weight: normal; margin-top: 10px;">유형</div>
+        <select id="sidebar-type">
+          <option value="">전체</option>
+        </select>
+        <button class="filter-btn" onclick="applyFilters()">검색</button>
+        <button class="filter-reset" onclick="resetFilters()">조건 초기화</button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">📊 현황</div>
+        <div class="stats-section" id="stats-section"></div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <div class="hero">
+        <div class="hero-content">
+          <div class="hero-title">
+            <span class="hero-icon">📦</span>
+            토너/소모품 검색
+          </div>
+          <div class="hero-subtitle">제조사·모델·유형·부품명/코드로 검색하세요</div>
+          <div class="search-box">
+            <select id="manufacturer">
+              <option value="">모든 제조사</option>
+            </select>
+            <select id="model">
+              <option value="">모든 모델</option>
+            </select>
+            <select id="type">
+              <option value="">모든 유형</option>
+            </select>
+            <input type="text" id="keyword" placeholder="예: TN2, A0ED, 토너, Toner..." />
+            <button class="btn-search" onclick="search()">검색</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-wrapper">
+        <div id="results-container">
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-text">검색 조건을 입력하여 토너/소모품을 찾아보세요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div>상세 정보</div>
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<script>
+let allToners = [];
+let dataLoaded = false;
+
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showMessage(icon, text, sub) {
+  document.getElementById('results-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">${icon}</div>
+      <div class="empty-text">${esc(text)}</div>
+      ${sub ? `<div class="empty-text" style="margin-top:8px;font-size:0.85rem;opacity:0.7;">${esc(sub)}</div>` : ''}
+    </div>
+  `;
+}
+
+async function loadData() {
+  showMessage('⏳', '데이터를 불러오는 중입니다...');
+  try {
+    const response = await fetch('toner_v1.json', { cache: 'no-cache' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('JSON 형식 오류');
+    allToners = data;
+    dataLoaded = true;
+    console.log('토너 데이터 로드됨:', allToners.length);
+    populateFilters();
+    updateStats();
+    showMessage('🔍', '검색 조건을 입력하여 토너/소모품을 찾아보세요');
+  } catch (e) {
+    console.error('데이터 로드 실패:', e);
+    showMessage('⚠️', '데이터를 불러올 수 없습니다', '잠시 후 다시 시도해 주세요. (' + e.message + ')');
+    document.getElementById('total-count').textContent = '0';
+  }
+}
+
+function populateFilters() {
+  const mfrs = [...new Set(allToners.map(t => t.manufacturer).filter(Boolean))].sort();
+  const models = [...new Set(allToners.map(t => t.model_category).filter(Boolean))].sort();
+  const types = [...new Set(allToners.map(t => t.type).filter(Boolean))].sort();
+
+  const fill = (id, vals, allLabel) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${allLabel}</option>` +
+      vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    sel.value = cur;
+  };
+  fill('manufacturer', mfrs, '모든 제조사');
+  fill('sidebar-manufacturer', mfrs, '전체');
+  fill('model', models, '모든 모델');
+  fill('type', types, '모든 유형');
+  fill('sidebar-type', types, '전체');
+
+  // Model dropdown: filter by manufacturer when changed
+  document.getElementById('manufacturer').addEventListener('change', updateModelOptions);
+  document.getElementById('sidebar-manufacturer').addEventListener('change', () => {
+    document.getElementById('manufacturer').value = document.getElementById('sidebar-manufacturer').value;
+    updateModelOptions();
+  });
+}
+
+function updateModelOptions() {
+  const mfr = document.getElementById('manufacturer').value;
+  const models = mfr
+    ? [...new Set(allToners.filter(t => t.manufacturer === mfr).map(t => t.model_category))].sort()
+    : [...new Set(allToners.map(t => t.model_category))].sort();
+  const sel = document.getElementById('model');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">모든 모델</option>' +
+    models.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if (models.includes(cur)) sel.value = cur;
+}
+
+function updateStats() {
+  document.getElementById('total-count').textContent = allToners.length.toLocaleString();
+  const counts = {};
+  allToners.forEach(t => {
+    const m = t.manufacturer || '(없음)';
+    counts[m] = (counts[m] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  document.getElementById('stats-section').innerHTML = sorted.map(([l, n]) => `
+    <div class="stat-item">
+      <span class="stat-label">${esc(l)}</span>
+      <span class="stat-value">${n.toLocaleString()}</span>
+    </div>
+  `).join('');
+}
+
+function search() {
+  if (!dataLoaded) {
+    showMessage('⏳', '데이터 로딩 중입니다. 잠시 후 다시 시도해 주세요.');
+    return;
+  }
+  const mfr = document.getElementById('manufacturer').value;
+  const model = document.getElementById('model').value;
+  const type = document.getElementById('type').value;
+  const kw = document.getElementById('keyword').value.trim().toLowerCase();
+
+  if (!mfr && !model && !type && !kw) {
+    showMessage('🔍', '제조사·모델·유형·키워드 중 하나 이상을 입력하세요');
+    return;
+  }
+
+  let f = allToners;
+  if (mfr) f = f.filter(t => t.manufacturer === mfr);
+  if (model) f = f.filter(t => t.model_category === model);
+  if (type) f = f.filter(t => t.type === type);
+  if (kw) {
+    f = f.filter(t => {
+      return (t.part_code && t.part_code.toLowerCase().includes(kw)) ||
+             (t.part_name && t.part_name.toLowerCase().includes(kw)) ||
+             (t.compatible_models && t.compatible_models.toLowerCase().includes(kw)) ||
+             (t.unit_location && t.unit_location.toLowerCase().includes(kw));
+    });
+  }
+  displayResults(f);
+}
+
+function applyFilters() {
+  document.getElementById('manufacturer').value = document.getElementById('sidebar-manufacturer').value;
+  document.getElementById('type').value = document.getElementById('sidebar-type').value;
+  updateModelOptions();
+  search();
+}
+
+function resetFilters() {
+  ['manufacturer', 'model', 'type', 'keyword', 'sidebar-manufacturer', 'sidebar-type'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  updateModelOptions();
+  showMessage('🔍', '검색 조건을 입력하여 토너/소모품을 찾아보세요');
+}
+
+const RENDER_LIMIT = 200;
+function displayResults(results) {
+  const container = document.getElementById('results-container');
+  if (results.length === 0) { showMessage('❌', '검색 결과가 없습니다'); return; }
+  const shown = results.slice(0, RENDER_LIMIT);
+  const overflow = results.length > RENDER_LIMIT ? ` (상위 ${RENDER_LIMIT}건 표시)` : '';
+
+  container.innerHTML = `
+    <div class="results-info">${results.length.toLocaleString()}개 결과${overflow}</div>
+    <div class="results-grid">
+      ${shown.map((t, i) => {
+        const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
+        const typeClass = t.type === '드럼/OPC' ? 'type-drum' : t.type === '폐토너' ? 'type-waste' : t.type === '기타' ? 'type-other' : '';
+        return `
+        <div class="toner-card" data-idx="${i}">
+          <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="toner-code">${esc(t.part_code)}</span>
+            <span class="toner-mfr">${esc(t.manufacturer)}</span>
+          </div>
+          <div class="toner-name">${esc(t.part_name)}</div>
+          <div class="toner-models">${esc(t.model_category)} · ${esc(t.compatible_models)}</div>
+          <div class="toner-meta">
+            <span class="toner-tag ${typeClass}">${esc(t.type)}</span>
+            ${colorTag}
+            <span class="toner-tag type-other">${esc(t.unit_location)}</span>
+          </div>
+        </div>
+      `;}).join('')}
+    </div>
+  `;
+  container.querySelectorAll('.toner-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = Number(card.dataset.idx);
+      if (shown[idx]) showDetail(shown[idx]);
+    });
+  });
+}
+
+function showDetail(t) {
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+  content.innerHTML = `
+    <div class="detail-code">${esc(t.part_code)}</div>
+    <div class="detail-name">${esc(t.part_name)}</div>
+    <div class="detail-meta">
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">제조사</div>
+        <div class="detail-meta-value">${esc(t.manufacturer)}</div>
+      </div>
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">모델 카테고리</div>
+        <div class="detail-meta-value">${esc(t.model_category)}</div>
+      </div>
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">유형</div>
+        <div class="detail-meta-value">${esc(t.type)}</div>
+      </div>
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">색상</div>
+        <div class="detail-meta-value">${esc(t.color || '—')}</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">지원 기종</div>
+      <div class="detail-section-content">${esc(t.compatible_models) || '—'}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">유닛 위치</div>
+      <div class="detail-section-content">${esc(t.unit_location) || '—'}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">부품코드</div>
+      <div class="detail-section-content" style="font-family:monospace;word-break:break-all;">${esc(t.part_code)}</div>
+    </div>
+  `;
+  panel.classList.add('active');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  document.getElementById('keyword')?.addEventListener('keypress', e => {
+    if (e.key === 'Enter') search();
+  });
+});
+</script>
+</body>
+</html>
