@@ -151,10 +151,33 @@ html, body {
   border-radius: 8px; padding: 16px;
   cursor: pointer; transition: all 0.2s;
   border-left: 4px solid var(--primary);
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  align-items: start;
 }
+.toner-card.no-image { grid-template-columns: 1fr; }
 .toner-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transform: translateY(-2px);
+}
+.toner-thumb {
+  width: 90px; height: 90px;
+  object-fit: contain;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+.toner-body { min-width: 0; }
+.toner-price {
+  display: inline-block;
+  background: #fff3cd;
+  color: #856404;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-left: 6px;
 }
 .toner-code {
   display: inline-block; background: var(--primary);
@@ -529,19 +552,28 @@ function displayResults(results) {
     <div class="results-grid">
       ${shown.map((t, i) => {
         const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
-        const typeClass = t.type === '드럼/OPC' ? 'type-drum' : t.type === '폐토너' ? 'type-waste' : t.type === '기타' ? 'type-other' : '';
+        const typeClass = t.type && (t.type.includes('드럼') || t.type.includes('OPC')) ? 'type-drum'
+                        : t.type === '폐토너' ? 'type-waste'
+                        : t.type === '기타' ? 'type-other' : '';
+        const hasImg = t.image && t.image.startsWith('http');
+        const priceTag = t.price ? `<span class="toner-price">${esc(t.price)}원</span>` : '';
+        const modelInfo = [t.model_category, t.compatible_models].filter(Boolean).join(' · ');
         return `
-        <div class="toner-card" data-idx="${i}">
-          <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <span class="toner-code">${esc(t.part_code)}</span>
-            <span class="toner-mfr">${esc(t.manufacturer)}</span>
-          </div>
-          <div class="toner-name">${esc(t.part_name)}</div>
-          <div class="toner-models">${esc(t.model_category)} · ${esc(t.compatible_models)}</div>
-          <div class="toner-meta">
-            <span class="toner-tag ${typeClass}">${esc(t.type)}</span>
-            ${colorTag}
-            <span class="toner-tag type-other">${esc(t.unit_location)}</span>
+        <div class="toner-card ${hasImg ? '' : 'no-image'}" data-idx="${i}">
+          ${hasImg ? `<img class="toner-thumb" src="${esc(t.image)}" alt="${esc(t.part_code)}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">` : ''}
+          <div class="toner-body">
+            <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+              <span class="toner-code">${esc(t.part_code)}</span>
+              <span class="toner-mfr">${esc(t.manufacturer)}</span>
+              ${priceTag}
+            </div>
+            <div class="toner-name">${esc(t.part_name)}</div>
+            <div class="toner-models">${esc(modelInfo)}</div>
+            <div class="toner-meta">
+              <span class="toner-tag ${typeClass}">${esc(t.type)}</span>
+              ${colorTag}
+              ${t.unit_location && t.unit_location !== t.type ? `<span class="toner-tag type-other">${esc(t.unit_location)}</span>` : ''}
+            </div>
           </div>
         </div>
       `;}).join('')}
@@ -558,17 +590,22 @@ function displayResults(results) {
 function showDetail(t) {
   const panel = document.getElementById('detail-panel');
   const content = document.getElementById('detail-content');
+  const hasImg = t.image && t.image.startsWith('http');
+  const priceHtml = t.price
+    ? `<div class="detail-section"><div class="detail-section-title">가격</div><div class="detail-section-content" style="font-size:1.3rem;font-weight:700;color:#d63384;">${esc(t.price)}원</div></div>`
+    : '';
+  const sourceInfo = t.source === 'tonerdot.com' && t.source_id
+    ? `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="https://www.tonerdot.com/goods/goods_view.php?goodsNo=${esc(t.source_id)}" target="_blank" rel="noopener" style="color:#00b894;font-weight:600;text-decoration:none;">🛒 tonerdot.com 에서 보기 ↗</a></div></div>`
+    : t.source ? `<div class="detail-section"><div class="detail-section-title">출처</div><div class="detail-section-content">${esc(t.source)}</div></div>` : '';
+
   content.innerHTML = `
+    ${hasImg ? `<img src="${esc(t.image)}" alt="${esc(t.part_code)}" style="width:100%;max-height:240px;object-fit:contain;background:#f9f9f9;border-radius:6px;margin-bottom:16px;" onerror="this.style.display='none'">` : ''}
     <div class="detail-code">${esc(t.part_code)}</div>
     <div class="detail-name">${esc(t.part_name)}</div>
     <div class="detail-meta">
       <div class="detail-meta-item">
         <div class="detail-meta-label">제조사</div>
         <div class="detail-meta-value">${esc(t.manufacturer)}</div>
-      </div>
-      <div class="detail-meta-item">
-        <div class="detail-meta-label">모델 카테고리</div>
-        <div class="detail-meta-value">${esc(t.model_category)}</div>
       </div>
       <div class="detail-meta-item">
         <div class="detail-meta-label">유형</div>
@@ -578,19 +615,25 @@ function showDetail(t) {
         <div class="detail-meta-label">색상</div>
         <div class="detail-meta-value">${esc(t.color || '—')}</div>
       </div>
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">모델 카테고리</div>
+        <div class="detail-meta-value">${esc(t.model_category || '—')}</div>
+      </div>
     </div>
+    ${priceHtml}
     <div class="detail-section">
       <div class="detail-section-title">지원 기종</div>
       <div class="detail-section-content">${esc(t.compatible_models) || '—'}</div>
     </div>
     <div class="detail-section">
-      <div class="detail-section-title">유닛 위치</div>
+      <div class="detail-section-title">유닛 위치 / 카테고리</div>
       <div class="detail-section-content">${esc(t.unit_location) || '—'}</div>
     </div>
     <div class="detail-section">
       <div class="detail-section-title">부품코드</div>
-      <div class="detail-section-content" style="font-family:monospace;word-break:break-all;">${esc(t.part_code)}</div>
+      <div class="detail-section-content" style="font-family:monospace;word-break:break-all;font-size:1rem;font-weight:600;">${esc(t.part_code)}</div>
     </div>
+    ${sourceInfo}
   `;
   panel.classList.add('active');
 }
