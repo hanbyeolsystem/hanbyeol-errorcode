@@ -118,8 +118,8 @@ html, body {
 
 .search-box {
   display: grid;
-  grid-template-columns: 180px 180px 180px 1fr 100px;
-  gap: 12px; max-width: 1100px;
+  grid-template-columns: 200px 200px 1fr 100px;
+  gap: 12px; max-width: 1000px;
 }
 .search-box select, .search-box input {
   padding: 12px 14px; border: none;
@@ -363,9 +363,6 @@ html, body {
             <select id="manufacturer">
               <option value="">모든 제조사</option>
             </select>
-            <select id="model">
-              <option value="">모든 모델</option>
-            </select>
             <select id="type">
               <option value="">모든 유형</option>
             </select>
@@ -441,7 +438,6 @@ async function loadData() {
 
 function populateFilters() {
   const mfrs = [...new Set(allToners.map(t => t.manufacturer).filter(Boolean))].sort();
-  const models = [...new Set(allToners.map(t => t.model_category).filter(Boolean))].sort();
   const types = [...new Set(allToners.map(t => t.type).filter(Boolean))].sort();
 
   const fill = (id, vals, allLabel) => {
@@ -454,28 +450,13 @@ function populateFilters() {
   };
   fill('manufacturer', mfrs, '모든 제조사');
   fill('sidebar-manufacturer', mfrs, '전체');
-  fill('model', models, '모든 모델');
   fill('type', types, '모든 유형');
   fill('sidebar-type', types, '전체');
 
-  // Model dropdown: filter by manufacturer when changed
-  document.getElementById('manufacturer').addEventListener('change', updateModelOptions);
+  // Sidebar manufacturer -> sync to main search manufacturer
   document.getElementById('sidebar-manufacturer').addEventListener('change', () => {
     document.getElementById('manufacturer').value = document.getElementById('sidebar-manufacturer').value;
-    updateModelOptions();
   });
-}
-
-function updateModelOptions() {
-  const mfr = document.getElementById('manufacturer').value;
-  const models = mfr
-    ? [...new Set(allToners.filter(t => t.manufacturer === mfr).map(t => t.model_category))].sort()
-    : [...new Set(allToners.map(t => t.model_category))].sort();
-  const sel = document.getElementById('model');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">모든 모델</option>' +
-    models.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
-  if (models.includes(cur)) sel.value = cur;
 }
 
 function updateStats() {
@@ -500,18 +481,16 @@ function search() {
     return;
   }
   const mfr = document.getElementById('manufacturer').value;
-  const model = document.getElementById('model').value;
   const type = document.getElementById('type').value;
   const kw = document.getElementById('keyword').value.trim().toLowerCase();
 
-  if (!mfr && !model && !type && !kw) {
-    showMessage('🔍', '제조사·모델·유형·키워드 중 하나 이상을 입력하세요');
+  if (!mfr && !type && !kw) {
+    showMessage('🔍', '제조사·유형·키워드 중 하나 이상을 입력하세요');
     return;
   }
 
   let f = allToners;
   if (mfr) f = f.filter(t => t.manufacturer === mfr);
-  if (model) f = f.filter(t => t.model_category === model);
   if (type) f = f.filter(t => t.type === type);
   if (kw) {
     f = f.filter(t => {
@@ -527,16 +506,14 @@ function search() {
 function applyFilters() {
   document.getElementById('manufacturer').value = document.getElementById('sidebar-manufacturer').value;
   document.getElementById('type').value = document.getElementById('sidebar-type').value;
-  updateModelOptions();
   search();
 }
 
 function resetFilters() {
-  ['manufacturer', 'model', 'type', 'keyword', 'sidebar-manufacturer', 'sidebar-type'].forEach(id => {
+  ['manufacturer', 'type', 'keyword', 'sidebar-manufacturer', 'sidebar-type'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  updateModelOptions();
   showMessage('🔍', '검색 조건을 입력하여 토너/소모품을 찾아보세요');
 }
 
@@ -594,9 +571,7 @@ function showDetail(t) {
   const priceHtml = t.price
     ? `<div class="detail-section"><div class="detail-section-title">가격</div><div class="detail-section-content" style="font-size:1.3rem;font-weight:700;color:#d63384;">${esc(t.price)}원</div></div>`
     : '';
-  const sourceInfo = t.source === 'tonerdot.com' && t.source_id
-    ? `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="https://www.tonerdot.com/goods/goods_view.php?goodsNo=${esc(t.source_id)}" target="_blank" rel="noopener" style="color:#00b894;font-weight:600;text-decoration:none;">🛒 tonerdot.com 에서 보기 ↗</a></div></div>`
-    : t.source ? `<div class="detail-section"><div class="detail-section-title">출처</div><div class="detail-section-content">${esc(t.source)}</div></div>` : '';
+  const sourceInfo = `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="http://hbsys.co.kr" target="_blank" rel="noopener" style="display:inline-block;background:#00b894;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:0.95rem;">🛒 한별시스템에서 구매하기 ↗</a></div></div>`;
 
   content.innerHTML = `
     ${hasImg ? `<img src="${esc(t.image)}" alt="${esc(t.part_code)}" style="width:100%;max-height:240px;object-fit:contain;background:#f9f9f9;border-radius:6px;margin-bottom:16px;" onerror="this.style.display='none'">` : ''}
