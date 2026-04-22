@@ -532,7 +532,6 @@ function displayResults(results) {
     <div class="results-grid">
       ${shown.map((t, i) => {
         const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
-        const vendorTag = t.vendor ? `<span class="toner-tag type-other">${esc(t.vendor)}</span>` : '';
         const yieldTag = t.yield ? `<span class="toner-tag type-drum">📄 ${esc(t.yield)}</span>` : '';
         return `
         <div class="toner-card no-image" data-idx="${i}">
@@ -546,7 +545,6 @@ function displayResults(results) {
             <div class="toner-meta">
               ${colorTag}
               ${yieldTag}
-              ${vendorTag}
               ${t.gg_code ? `<span class="toner-tag type-other">${esc(t.gg_code)}</span>` : ''}
             </div>
           </div>
@@ -608,18 +606,6 @@ function showDetail(t) {
     <div class="detail-section">
       <div class="detail-section-title">G&amp;G 코드</div>
       <div class="detail-section-content" style="font-family:monospace;font-weight:600;">${esc(t.gg_code)}</div>
-    </div>` : ''}
-
-    ${t.vendor ? `
-    <div class="detail-section">
-      <div class="detail-section-title">공급사</div>
-      <div class="detail-section-content">${esc(t.vendor)}</div>
-    </div>` : ''}
-
-    ${t.unit_location ? `
-    <div class="detail-section">
-      <div class="detail-section-title">분류</div>
-      <div class="detail-section-content">${esc(t.unit_location)}</div>
     </div>` : ''}
 
     <div class="detail-section">
