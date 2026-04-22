@@ -571,7 +571,12 @@ function showDetail(t) {
   const priceHtml = t.price
     ? `<div class="detail-section"><div class="detail-section-title">가격</div><div class="detail-section-content" style="font-size:1.3rem;font-weight:700;color:#d63384;">${esc(t.price)}원</div></div>`
     : '';
-  const sourceInfo = `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="http://hbsys.co.kr" target="_blank" rel="noopener" style="display:inline-block;background:#00b894;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:0.95rem;">🛒 한별시스템에서 구매하기 ↗</a></div></div>`;
+  // 모든 상세페이지는 hbsys.co.kr 로 연결. hbsys 상품이면 구체적 상품 페이지 URL 사용.
+  let buyUrl = 'http://hbsys.co.kr';
+  if (t.source === 'hbsys.co.kr' && t.source_id) {
+    buyUrl = `https://hbsys.co.kr/shop/shopdetail.html?branduid=${encodeURIComponent(t.source_id)}&xcode=008&type=X`;
+  }
+  const sourceInfo = `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="${esc(buyUrl)}" target="_blank" rel="noopener" style="display:inline-block;background:#00b894;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:0.95rem;">🛒 한별시스템에서 구매하기 ↗</a></div></div>`;
 
   content.innerHTML = `
     ${hasImg ? `<img src="${esc(t.image)}" alt="${esc(t.part_code)}" style="width:100%;max-height:240px;object-fit:contain;background:#f9f9f9;border-radius:6px;margin-bottom:16px;" onerror="this.style.display='none'">` : ''}
