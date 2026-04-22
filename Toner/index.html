@@ -366,7 +366,7 @@ html, body {
             <select id="type">
               <option value="">모든 유형</option>
             </select>
-            <input type="text" id="keyword" placeholder="예: TN2, A0ED, 토너, Toner..." />
+            <input type="text" id="keyword" placeholder="토너명/모델명/프린터명 모두 검색 (예: TN-323, MLT-D203, Bizhub, LaserJet, iR, HP-1010)" />
             <button class="btn-search" onclick="search()">검색</button>
           </div>
         </div>
@@ -494,10 +494,13 @@ function search() {
   if (type) f = f.filter(t => t.type === type);
   if (kw) {
     f = f.filter(t => {
-      return (t.part_code && t.part_code.toLowerCase().includes(kw)) ||
-             (t.part_name && t.part_name.toLowerCase().includes(kw)) ||
-             (t.compatible_models && t.compatible_models.toLowerCase().includes(kw)) ||
-             (t.unit_location && t.unit_location.toLowerCase().includes(kw));
+      // 토너명·부품코드·호환프린터·G&G코드·공급사·유닛위치·원본브랜드 모두 검색
+      const fields = [
+        t.part_code, t.part_name, t.toner_model,
+        t.compatible_models, t.unit_location,
+        t.gg_code, t.vendor, t.raw_brand
+      ];
+      return fields.some(v => v && String(v).toLowerCase().includes(kw));
     });
   }
   displayResults(f);
@@ -529,27 +532,22 @@ function displayResults(results) {
     <div class="results-grid">
       ${shown.map((t, i) => {
         const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
-        const typeClass = t.type && (t.type.includes('드럼') || t.type.includes('OPC')) ? 'type-drum'
-                        : t.type === '폐토너' ? 'type-waste'
-                        : t.type === '기타' ? 'type-other' : '';
-        const hasImg = t.image && t.image.startsWith('http');
-        const priceTag = t.price ? `<span class="toner-price">${esc(t.price)}원</span>` : '';
-        const modelInfo = [t.model_category, t.compatible_models].filter(Boolean).join(' · ');
+        const vendorTag = t.vendor ? `<span class="toner-tag type-other">${esc(t.vendor)}</span>` : '';
+        const yieldTag = t.yield ? `<span class="toner-tag type-drum">📄 ${esc(t.yield)}</span>` : '';
         return `
-        <div class="toner-card ${hasImg ? '' : 'no-image'}" data-idx="${i}">
-          ${hasImg ? `<img class="toner-thumb" src="${esc(t.image)}" alt="${esc(t.part_code)}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">` : ''}
+        <div class="toner-card no-image" data-idx="${i}">
           <div class="toner-body">
             <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
               <span class="toner-code">${esc(t.part_code)}</span>
               <span class="toner-mfr">${esc(t.manufacturer)}</span>
-              ${priceTag}
             </div>
             <div class="toner-name">${esc(t.part_name)}</div>
-            <div class="toner-models">${esc(modelInfo)}</div>
+            ${t.compatible_models ? `<div class="toner-models">🖨 ${esc(t.compatible_models)}</div>` : ''}
             <div class="toner-meta">
-              <span class="toner-tag ${typeClass}">${esc(t.type)}</span>
               ${colorTag}
-              ${t.unit_location && t.unit_location !== t.type ? `<span class="toner-tag type-other">${esc(t.unit_location)}</span>` : ''}
+              ${yieldTag}
+              ${vendorTag}
+              ${t.gg_code ? `<span class="toner-tag type-other">${esc(t.gg_code)}</span>` : ''}
             </div>
           </div>
         </div>
@@ -567,53 +565,67 @@ function displayResults(results) {
 function showDetail(t) {
   const panel = document.getElementById('detail-panel');
   const content = document.getElementById('detail-content');
-  const hasImg = t.image && t.image.startsWith('http');
-  const priceHtml = t.price
-    ? `<div class="detail-section"><div class="detail-section-title">가격</div><div class="detail-section-content" style="font-size:1.3rem;font-weight:700;color:#d63384;">${esc(t.price)}원</div></div>`
-    : '';
-  // 모든 상세페이지는 hbsys.co.kr 로 연결. hbsys 상품이면 구체적 상품 페이지 URL 사용.
-  let buyUrl = 'http://hbsys.co.kr';
-  if (t.source === 'hbsys.co.kr' && t.source_id) {
-    buyUrl = `https://hbsys.co.kr/shop/shopdetail.html?branduid=${encodeURIComponent(t.source_id)}&xcode=008&type=X`;
-  }
-  const sourceInfo = `<div class="detail-section"><div class="detail-section-title">구매 링크</div><div class="detail-section-content"><a href="${esc(buyUrl)}" target="_blank" rel="noopener" style="display:inline-block;background:#00b894;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:0.95rem;">🛒 한별시스템에서 구매하기 ↗</a></div></div>`;
+
+  const buyBtn = `<a href="http://hbsys.co.kr" target="_blank" rel="noopener" style="display:inline-block;background:#00b894;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:0.95rem;">🛒 한별시스템에서 구매하기 ↗</a>`;
 
   content.innerHTML = `
-    ${hasImg ? `<img src="${esc(t.image)}" alt="${esc(t.part_code)}" style="width:100%;max-height:240px;object-fit:contain;background:#f9f9f9;border-radius:6px;margin-bottom:16px;" onerror="this.style.display='none'">` : ''}
     <div class="detail-code">${esc(t.part_code)}</div>
     <div class="detail-name">${esc(t.part_name)}</div>
+
     <div class="detail-meta">
       <div class="detail-meta-item">
         <div class="detail-meta-label">제조사</div>
         <div class="detail-meta-value">${esc(t.manufacturer)}</div>
       </div>
       <div class="detail-meta-item">
-        <div class="detail-meta-label">유형</div>
-        <div class="detail-meta-value">${esc(t.type)}</div>
-      </div>
-      <div class="detail-meta-item">
         <div class="detail-meta-label">색상</div>
         <div class="detail-meta-value">${esc(t.color || '—')}</div>
       </div>
+      ${t.yield ? `
       <div class="detail-meta-item">
-        <div class="detail-meta-label">모델 카테고리</div>
-        <div class="detail-meta-value">${esc(t.model_category || '—')}</div>
-      </div>
+        <div class="detail-meta-label">출력매수 (수율)</div>
+        <div class="detail-meta-value">${esc(t.yield)}</div>
+      </div>` : ''}
+      ${t.box_qty ? `
+      <div class="detail-meta-item">
+        <div class="detail-meta-label">박스당 수량</div>
+        <div class="detail-meta-value">${esc(t.box_qty)}</div>
+      </div>` : ''}
     </div>
-    ${priceHtml}
+
     <div class="detail-section">
-      <div class="detail-section-title">지원 기종</div>
-      <div class="detail-section-content">${esc(t.compatible_models) || '—'}</div>
+      <div class="detail-section-title">토너명 / 정품 모델</div>
+      <div class="detail-section-content" style="font-weight:600;">${esc(t.toner_model || t.part_name)}</div>
     </div>
+
+    ${t.compatible_models ? `
     <div class="detail-section">
-      <div class="detail-section-title">유닛 위치 / 카테고리</div>
-      <div class="detail-section-content">${esc(t.unit_location) || '—'}</div>
-    </div>
+      <div class="detail-section-title">호환 프린터 / 지원기종</div>
+      <div class="detail-section-content">🖨 ${esc(t.compatible_models)}</div>
+    </div>` : ''}
+
+    ${t.gg_code ? `
     <div class="detail-section">
-      <div class="detail-section-title">부품코드</div>
-      <div class="detail-section-content" style="font-family:monospace;word-break:break-all;font-size:1rem;font-weight:600;">${esc(t.part_code)}</div>
+      <div class="detail-section-title">G&amp;G 코드</div>
+      <div class="detail-section-content" style="font-family:monospace;font-weight:600;">${esc(t.gg_code)}</div>
+    </div>` : ''}
+
+    ${t.vendor ? `
+    <div class="detail-section">
+      <div class="detail-section-title">공급사</div>
+      <div class="detail-section-content">${esc(t.vendor)}</div>
+    </div>` : ''}
+
+    ${t.unit_location ? `
+    <div class="detail-section">
+      <div class="detail-section-title">분류</div>
+      <div class="detail-section-content">${esc(t.unit_location)}</div>
+    </div>` : ''}
+
+    <div class="detail-section">
+      <div class="detail-section-title">구매 링크</div>
+      <div class="detail-section-content">${buyBtn}</div>
     </div>
-    ${sourceInfo}
   `;
   panel.classList.add('active');
 }
