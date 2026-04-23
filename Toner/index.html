@@ -650,7 +650,7 @@ html, body {
     <!-- 라이브 카메라 영역 -->
     <div id="ocr-cam-wrap" class="ocr-cam-wrap">
       <video id="ocr-video" autoplay playsinline muted></video>
-      <div class="ocr-cam-hint">토너 라벨의 모델코드 부분을 가운데에 두고 촬영하세요</div>
+      <div class="ocr-cam-hint">🔢 <strong>숫자</strong> 부분이 가운데에 오도록 촬영하세요 (예: TK-<strong>8110</strong> → "8110" 인식)</div>
       <div class="ocr-cam-guide"></div>
     </div>
 
@@ -695,8 +695,8 @@ html, body {
     </details>
 
     <div class="ocr-hint">
-      💡 <strong>팁:</strong> 라벨을 <strong>가까이서 정면으로</strong> · 빛 반사 피하기 · 흔들리지 않게.
-      인식이 부정확해도 <strong>아래 원문</strong>에서 코드를 복사해 직접 검색하거나, <strong>검색창에 일부만 타이핑</strong>해도 자동 완성됩니다.
+      💡 <strong>이 검색은 숫자만 읽습니다.</strong> 토너 라벨에서 <strong>숫자 부분</strong>(예: 8110, 323, 255)을 가까이 정면으로 촬영해주세요.
+      인식이 부정확해도 <strong>아래 원문</strong>에서 숫자를 직접 고쳐 검색하거나, <strong>검색창에 숫자 일부만 타이핑</strong>해도 자동완성이 뜹니다.
     </div>
   </div>
 </div>
@@ -1115,9 +1115,10 @@ async function getTessWorker() {
       }
     }
   });
-  // 문자 whitelist: 영문 대문자 + 숫자 + 하이픈 + 슬래시 + 점 + 공백
+  // 숫자 전용 whitelist: OCR이 문자/기호를 억지로 숫자로 오인식하는 것을 방지하기 위해
+  // 숫자 + 분리자(하이픈, 점, 슬래시, 공백) 만 허용
   await _tessWorker.setParameters({
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/. ',
+    tessedit_char_whitelist: '0123456789-/. ',
     preserve_interword_spaces: '1',
     tessedit_pageseg_mode: '6'  // uniform block of text
   });
@@ -1154,26 +1155,35 @@ async function runOcr(canvas) {
     setOcrStatus('매칭 계산 중...', 95);
 
     const rawText = combined.toUpperCase();
-    document.getElementById('ocr-raw').textContent = '인식된 전체 텍스트:\n' + (combined.trim() || '(텍스트 없음)');
-    // 원문을 수정 가능한 필드에도 미리 채워둠 (사용자가 편집해서 재검색 가능)
+    // OCR 원문 + 추출된 숫자 run 표시
+    const runs = digitRuns(rawText);
+    const rawEl = document.getElementById('ocr-raw');
+    rawEl.textContent =
+      '🔢 추출된 숫자: ' + (runs.join(', ') || '(없음)') + '\n\n' +
+      'OCR 원문:\n' + (combined.trim() || '(텍스트 없음)');
+
+    // 수정 가능한 수동 입력 필드에 숫자 run 중 가장 긴 것 미리 채움
     const manual = document.getElementById('ocr-manual');
     if (manual) {
-      const tokens = extractTokens(rawText);
-      manual.value = tokens.length ? tokens[0] : rawText.trim().split(/\s+/).slice(0, 3).join(' ').slice(0, 40);
+      const best = runs.slice().sort((a, b) => b.length - a.length)[0] || '';
+      manual.value = best;
     }
 
-    // 새 매칭: 정규화된 n-gram substring
-    const matches = fuzzyMatchTonersV2(rawText);
+    // 핵심: 숫자 전용 매칭
+    const matches = fuzzyMatchTonersV3(rawText);
     renderMatches(matches);
 
-    // 보조 후보 (raw tokens — 매칭 약할 때만)
-    const tokens = extractTokens(rawText);
-    renderCandidates(tokens, matches.length === 0);
+    // 보조 후보 (숫자 run들 — 매칭 약할 때 수동 클릭 검색용)
+    renderCandidates(runs, matches.length === 0);
 
     if (matches.length === 0) {
-      setOcrStatus('⚠️ 매칭 결과가 없습니다. 다시 촬영하거나 원문 텍스트로 직접 검색하세요.', 0);
+      if (runs.length === 0) {
+        setOcrStatus('⚠️ 숫자를 찾지 못했습니다. 더 가까이서 선명하게 다시 촬영하세요.', 0);
+      } else {
+        setOcrStatus(`⚠️ 숫자 ${runs.length}개 추출됨 (${runs.join(', ')}) — DB 매칭 실패. 원문 편집으로 재검색해보세요.`, 100);
+      }
     } else {
-      setOcrStatus(`매칭 완료 (${matches.length}건)`, 100);
+      setOcrStatus(`✅ 매칭 완료 (${matches.length}건) · 추출 숫자: ${runs.join(', ') || '—'}`, 100);
     }
   } catch (e) {
     console.error('OCR 실패:', e);
@@ -1208,87 +1218,73 @@ function levenshtein(a, b) {
   return dp[b.length];
 }
 
-// ---------- 정규화: 알파벳+숫자만 남기고 대문자로 ----------
+// ---------- 정규화 (자동완성/수동 입력용: 알파+숫자) ----------
 function normCode(s) {
   if (!s) return '';
   return s.toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-// ---------- 퍼지 매칭 V2: 정규화 + n-gram substring ----------
-// 핵심 아이디어: OCR 결과의 띄어쓰기/하이픈/점은 무시하고 붙여서 비교한다.
-// 예) OCR 'TK 8110' → 'TK8110' → DB 'TK-8110KY' → 'TK8110KY' → TK8110 substring 매치!
-function fuzzyMatchTonersV2(rawOcrText) {
-  const normFull = normCode(rawOcrText);
-  if (normFull.length < 3) return [];
+// ---------- 숫자 전용 유틸 (OCR 매칭 전용) ----------
+// 문자열에서 3자 이상 연속된 숫자 run 만 추출
+function digitRuns(s, minLen = 3) {
+  if (!s) return [];
+  return (String(s).match(/\d{3,}/g) || []).filter(d => d.length >= minLen);
+}
+function onlyDigits(s) {
+  if (!s) return '';
+  return String(s).replace(/\D/g, '');
+}
+
+// ---------- 퍼지 매칭 V3 (숫자 전용 OCR 매칭) ----------
+// OCR은 문자/기호 오인식이 잦으므로, "숫자 run"만 추출해서 DB의 숫자 run과 비교.
+// 예) OCR "8 110" or "8110" or "BllO" → 모두 숫자 run "8110"으로 정규화 → DB "TK-8110KY"의 숫자 "8110"과 매치
+function fuzzyMatchTonersV3(rawOcrText) {
+  const ocrRuns = digitRuns(rawOcrText);
+  const ocrConcat = onlyDigits(rawOcrText);   // 전체 숫자만 이어붙인 것 (fallback용)
+  if (!ocrRuns.length && ocrConcat.length < 3) return [];
 
   const scored = [];
   for (const t of allToners) {
-    // DB 레코드의 모든 코드 후보를 정규화
-    const raws = [t.part_code, t.toner_model, t.part_name, t.gg_code].filter(Boolean);
-    // part_name 은 긴 설명일 수 있어 분리 토큰으로도 활용
-    const splitTokens = [];
-    raws.forEach(r => {
-      r.toUpperCase().split(/[\s\/\(\),;:]+/).forEach(tok => {
-        const n = normCode(tok);
-        if (n.length >= 4) splitTokens.push(n);
-      });
-    });
-    const candidates = [
-      ...raws.map(normCode).filter(c => c.length >= 4),
-      ...splitTokens
-    ];
-    const uniq = [...new Set(candidates)];
-    if (!uniq.length) { scored.push({ toner: t, score: 0, hit: '' }); continue; }
+    // DB 레코드에서 모든 숫자 run 모으기
+    const raws = [t.part_code, t.toner_model, t.part_name, t.gg_code, t.compatible_models].filter(Boolean);
+    const dbRuns = new Set();
+    raws.forEach(r => digitRuns(r).forEach(d => dbRuns.add(d)));
+    if (!dbRuns.size) continue;
 
     let best = 0;
     let bestHit = '';
 
-    for (const code of uniq) {
-      // 1. DB 코드 전체가 OCR에 포함 — 최고 점수
-      if (code.length >= 4 && normFull.includes(code)) {
-        const s = 120 + code.length * 2;
-        if (s > best) { best = s; bestHit = code; }
-        continue;
-      }
-      // 2. DB 코드의 prefix(5자 이상) 가 OCR에 포함
-      if (code.length >= 6) {
-        for (let len = code.length - 1; len >= 5; len--) {
-          const pre = code.slice(0, len);
-          if (normFull.includes(pre)) {
-            const s = 80 + len;
-            if (s > best) { best = s; bestHit = pre; }
-            break;
-          }
+    for (const dbRun of dbRuns) {
+      // A. OCR run 들과 완전 일치/부분 일치
+      for (const ocrRun of ocrRuns) {
+        if (ocrRun === dbRun) {
+          // 완전 일치 — 최고 점수 (길이 가중)
+          const s = 120 + dbRun.length * 8;
+          if (s > best) { best = s; bestHit = dbRun; }
+        } else if (ocrRun.includes(dbRun) && dbRun.length >= 3) {
+          // OCR run 이 DB run 을 포함 (예: OCR "81101" 에서 DB "8110" 찾기)
+          const s = 90 + dbRun.length * 5;
+          if (s > best) { best = s; bestHit = dbRun; }
+        } else if (dbRun.includes(ocrRun) && ocrRun.length >= 3) {
+          // DB run 이 OCR run 을 포함 (예: DB "81100" 에 OCR "8110")
+          const s = 70 + ocrRun.length * 5;
+          if (s > best) { best = s; bestHit = ocrRun; }
         }
       }
-      // 3. DB 코드의 내부 substring(6자+) 이 OCR에 포함 — 부분 일치 대응
-      if (code.length >= 7) {
-        for (let start = 0; start <= code.length - 6; start++) {
-          for (let len = Math.min(code.length - start, 12); len >= 6; len--) {
-            const sub = code.substr(start, len);
-            if (normFull.includes(sub)) {
-              const s = 55 + len;
-              if (s > best) { best = s; bestHit = sub; }
-              // break 내부만, 더 짧은 길이 시도 불필요
-              start = start; // noop
-              break;
+      // B. OCR 전체 숫자 concat 에 DB run 이 포함되는 경우 (여러 토큰에 걸쳐 있을 때)
+      if (ocrConcat.length >= dbRun.length && ocrConcat.includes(dbRun)) {
+        const s = 50 + dbRun.length * 3;
+        if (s > best) { best = s; bestHit = dbRun; }
+      }
+      // C. 1자 오인식 허용 (Levenshtein 1, 길이 4+ 만)
+      if (dbRun.length >= 4) {
+        for (const ocrRun of ocrRuns) {
+          if (Math.abs(ocrRun.length - dbRun.length) <= 1 && ocrRun !== dbRun) {
+            const d = levenshtein(ocrRun, dbRun);
+            if (d === 1) {
+              const s = 60 + dbRun.length * 3;
+              if (s > best) { best = s; bestHit = ocrRun + '≈' + dbRun; }
             }
-          }
-        }
-      }
-      // 4. Levenshtein fallback (길이 비슷한 경우)
-      if (code.length >= 4 && code.length <= 12) {
-        // OCR 전체에서 code 길이 만큼의 윈도우를 훑기
-        const window = code.length;
-        for (let i = 0; i + window <= normFull.length; i += 2) {
-          const seg = normFull.substr(i, window);
-          const d = levenshtein(seg, code);
-          if (d <= 1) {
-            const s = 70 + code.length - d * 10;
-            if (s > best) { best = s; bestHit = seg; }
-          } else if (d === 2 && code.length >= 6) {
-            const s = 50 + code.length - d * 5;
-            if (s > best) { best = s; bestHit = seg; }
           }
         }
       }
@@ -1298,7 +1294,7 @@ function fuzzyMatchTonersV2(rawOcrText) {
 
   return scored
     .sort((a, b) => b.score - a.score)
-    .slice(0, 15);
+    .slice(0, 20);
 }
 
 function renderMatches(matches) {
@@ -1308,9 +1304,10 @@ function renderMatches(matches) {
   list.innerHTML = matches.map(m => {
     const t = m.toner;
     const sc = Math.min(99, m.score);
-    const name = (t.part_name || t.toner_model || '').replace(/[<>"]/g, '');
+    const name = (t.part_name || t.toner_model || '');
     const mfr = t.manufacturer || '';
     const compat = (t.compatible_models || '').slice(0, 60);
+    const hit = m.hit ? `🔢 ${m.hit}` : '';
     return `
       <div class="ocr-match-card" data-id="${t.id}">
         <span class="ocr-match-score">${sc}점</span>
@@ -1318,6 +1315,7 @@ function renderMatches(matches) {
           <div class="ocr-match-code">${esc(t.part_code || '')} · ${esc(mfr)}</div>
           <div class="ocr-match-name">${esc(name)}</div>
           ${compat ? `<div class="ocr-match-meta">🖨 ${esc(compat)}</div>` : ''}
+          ${hit ? `<div class="ocr-match-meta" style="color:var(--primary-dark);font-weight:600;">${esc(hit)}</div>` : ''}
         </div>
       </div>
     `;
