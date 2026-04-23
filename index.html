@@ -402,6 +402,94 @@ html, body {
   transition: width 0.2s;
 }
 
+/* 라이브 카메라 */
+.ocr-cam-wrap {
+  position: relative;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  aspect-ratio: 4 / 3;
+  max-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ocr-cam-wrap.hidden { display: none; }
+#ocr-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+.ocr-cam-hint {
+  position: absolute;
+  top: 8px; left: 8px; right: 8px;
+  color: white;
+  background: rgba(0,0,0,0.55);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  text-align: center;
+}
+.ocr-cam-guide {
+  position: absolute;
+  top: 25%; bottom: 25%; left: 15%; right: 15%;
+  border: 2px dashed rgba(255,255,255,0.7);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* 매칭 결과 */
+.ocr-matches { display: none; margin-top: 12px; }
+.ocr-matches.active { display: block; }
+.ocr-match-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ocr-match-card:hover {
+  background: #dbeafe;
+  transform: translateX(2px);
+}
+.ocr-match-score {
+  flex: 0 0 auto;
+  background: var(--primary);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ocr-match-body { flex: 1; min-width: 0; }
+.ocr-match-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 0.95rem;
+}
+.ocr-match-name {
+  font-size: 0.82rem;
+  color: var(--text);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ocr-match-meta {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
 .ocr-candidates {
   display: none;
   margin-top: 12px;
@@ -922,7 +1010,7 @@ html, body {
   </div>
 </div>
 
-<!-- OCR 오버레이 (사진으로 에러코드 검색) -->
+<!-- OCR 오버레이 (라이브 카메라 + 엄격 3자리+ 매칭) -->
 <div class="ocr-overlay" id="ocr-overlay" onclick="if(event.target===this)closeOcr()">
   <div class="ocr-panel">
     <div class="ocr-header">
@@ -930,28 +1018,55 @@ html, body {
       <button class="ocr-close" onclick="closeOcr()">✕</button>
     </div>
 
-    <div class="ocr-buttons">
-      <button class="ocr-btn" onclick="document.getElementById('ocr-camera').click()">📸 사진 찍기</button>
-      <button class="ocr-btn secondary" onclick="document.getElementById('ocr-upload').click()">🖼️ 파일 선택</button>
+    <!-- 라이브 카메라 -->
+    <div id="ocr-cam-wrap" class="ocr-cam-wrap">
+      <video id="ocr-video" autoplay playsinline muted></video>
+      <div class="ocr-cam-hint">🔤 <strong>에러코드</strong>(예: 1010, SC101, C1004)가 가운데에 오도록 촬영하세요</div>
+      <div class="ocr-cam-guide"></div>
     </div>
-    <input type="file" id="ocr-camera" accept="image/*" capture="environment" style="display:none" onchange="handleOcrFile(this.files[0])">
+
+    <canvas id="ocr-canvas" style="display:none"></canvas>
+    <img id="ocr-preview" class="ocr-preview" alt="preview">
+
+    <div class="ocr-buttons" id="ocr-btns-capture">
+      <button class="ocr-btn" onclick="captureFromCamera()">📸 촬영 + 검색</button>
+      <button class="ocr-btn secondary" onclick="document.getElementById('ocr-upload').click()">🖼️ 파일 업로드</button>
+    </div>
+    <div class="ocr-buttons" id="ocr-btns-after" style="display:none">
+      <button class="ocr-btn" onclick="retakeCamera()">🔄 다시 촬영</button>
+      <button class="ocr-btn secondary" onclick="closeOcr()">닫기</button>
+    </div>
     <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOcrFile(this.files[0])">
 
-    <img id="ocr-preview" class="ocr-preview" alt="preview">
     <div id="ocr-status" class="ocr-status">
       <div id="ocr-status-text">이미지 분석 중...</div>
       <div class="ocr-progress-bar"><div id="ocr-progress-fill" class="ocr-progress-fill"></div></div>
     </div>
 
+    <!-- 매칭된 에러코드 카드 (실제 DB 레코드) -->
+    <div id="ocr-matches" class="ocr-matches">
+      <div class="ocr-candidates-title">🎯 일치하는 에러코드 (클릭하면 상세보기)</div>
+      <div id="ocr-matches-list"></div>
+    </div>
+
+    <!-- 보조 후보 (매칭 0건일 때) -->
     <div id="ocr-candidates" class="ocr-candidates">
-      <div class="ocr-candidates-title">🎯 인식된 에러코드 후보 (클릭하면 검색)</div>
+      <div class="ocr-candidates-title">📝 인식된 코드 후보 (클릭하면 검색)</div>
       <div id="ocr-candidates-list" class="ocr-candidates-list"></div>
     </div>
 
-    <pre id="ocr-raw" class="ocr-raw"></pre>
+    <details style="margin-top:12px" id="ocr-raw-details">
+      <summary style="cursor:pointer;font-size:0.82rem;color:var(--text-light);">🔍 OCR 원문 보기 / 직접 검색</summary>
+      <pre id="ocr-raw" class="ocr-raw" style="display:block;margin-top:8px;"></pre>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <input id="ocr-manual" type="text" placeholder="원문에서 코드를 복사/수정해 검색" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:0.85rem;">
+        <button class="ocr-btn" style="padding:8px 14px;" onclick="manualSearchFromOcr()">검색</button>
+      </div>
+    </details>
 
     <div class="ocr-hint">
-      💡 <strong>팁:</strong> 프린터 화면 / 라벨의 에러코드 부분을 최대한 확대해서 찍으면 정확도가 올라갑니다. 빛 반사나 흔들림은 피해주세요.
+      💡 <strong>알파벳+숫자 3자 이상</strong>이 DB의 에러코드와 연속으로 일치할 때만 매칭됩니다.
+      인식이 부정확해도 <strong>원문</strong>에서 수정하거나, <strong>검색창 타이핑 시 자동완성</strong>이 제공됩니다.
     </div>
   </div>
 </div>
@@ -1200,13 +1315,58 @@ function closeDetail() {
   document.getElementById('detail-panel').classList.remove('active');
 }
 
-// ==================== OCR (사진으로 에러코드 검색) ====================
-function openOcr() {
+// ==================== OCR (라이브 카메라 + 엄격 3자+ 알파뉴메릭 매칭) ====================
+let ocrStream = null;
+
+async function openOcr() {
   document.getElementById('ocr-overlay').classList.add('active');
+  document.getElementById('ocr-status').classList.remove('active');
+  document.getElementById('ocr-matches').classList.remove('active');
+  document.getElementById('ocr-candidates').classList.remove('active');
+  document.getElementById('ocr-preview').classList.remove('active');
+  document.getElementById('ocr-raw').textContent = '';
+  document.getElementById('ocr-btns-capture').style.display = 'grid';
+  document.getElementById('ocr-btns-after').style.display = 'none';
+  document.getElementById('ocr-cam-wrap').classList.remove('hidden');
+  await startCamera();
+}
+
+async function startCamera() {
+  try {
+    ocrStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280 },
+        height: { ideal: 960 }
+      },
+      audio: false
+    });
+    const video = document.getElementById('ocr-video');
+    video.srcObject = ocrStream;
+    await video.play().catch(() => {});
+  } catch (e) {
+    console.warn('카메라 접근 실패:', e);
+    document.getElementById('ocr-cam-wrap').classList.add('hidden');
+    setOcrStatus('⚠️ 카메라 접근 불가. "파일 업로드"를 사용하세요. (' + (e.message || e) + ')', 0);
+  }
+}
+
+function stopCamera() {
+  if (ocrStream) {
+    ocrStream.getTracks().forEach(t => t.stop());
+    ocrStream = null;
+  }
+  const video = document.getElementById('ocr-video');
+  if (video) video.srcObject = null;
 }
 
 function closeOcr() {
+  stopCamera();
   document.getElementById('ocr-overlay').classList.remove('active');
+}
+
+function retakeCamera() {
+  openOcr();
 }
 
 function setOcrStatus(text, progressPct) {
@@ -1218,138 +1378,370 @@ function setOcrStatus(text, progressPct) {
   }
 }
 
-function extractErrorCodeCandidates(rawText) {
-  // Normalize text: collapse whitespace, strip unusual chars
-  const text = rawText.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ');
-
-  // Collect candidate codes with priority scoring
-  const candidates = new Map(); // code -> score
-
-  // 1. Strong patterns (typical error code formats)
-  const strongPatterns = [
-    /\b([A-Z]{1,3}[\-\s]?\d{2,4}[\-\s]?\d{0,4}[A-Z]?)\b/g,   // E100-0001, SC1004, C1004, U0155
-    /\b(\d{3,4}[\-\.]\d{1,4})\b/g,                            // 071-100, 6.41
-    /\b([A-Z]\d{3,5})\b/g,                                    // E1234, C12345
-    /\b(\d{4})\b/g,                                           // 1010, 2000 (Kyocera-style 4-digit)
-    /\b([A-Z]{2}\d{2,4})\b/g,                                 // SC101, JAM32
-  ];
-
-  strongPatterns.forEach((re, idx) => {
-    let m;
-    while ((m = re.exec(text)) !== null) {
-      let code = m[1].replace(/\s/g, '').toUpperCase();
-      // Reject noise: too generic like "2024", "2023" (year-looking), too many zeros only
-      if (/^(19|20)\d{2}$/.test(code)) continue;              // year
-      if (/^0{3,}$/.test(code)) continue;                      // all zeros
-      if (code.length < 3 || code.length > 14) continue;
-      const score = 10 - idx;
-      candidates.set(code, Math.max(candidates.get(code) || 0, score));
-    }
-  });
-
-  // 2. Weak patterns - short numbers 2-3 digits, letters
-  const weakRegex = /\b([A-Z0-9]{2,4})\b/g;
-  let m;
-  while ((m = weakRegex.exec(text)) !== null) {
-    const code = m[1].toUpperCase();
-    if (candidates.has(code)) continue;
-    if (/^\d{1,2}$/.test(code)) continue;                      // too short
-    if (/^(19|20)\d{2}$/.test(code)) continue;
-    if (code.length < 2) continue;
-    candidates.set(code, 1);
+// ---------- 이미지 전처리 ----------
+function preprocessCanvas(src) {
+  const ctx = src.getContext('2d');
+  const img = ctx.getImageData(0, 0, src.width, src.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+    let v = (g - 128) * 1.4 + 128;
+    v = Math.max(0, Math.min(255, v));
+    d[i] = d[i+1] = d[i+2] = v;
   }
+  ctx.putImageData(img, 0, 0);
+  return src;
+}
+function upscaleCanvas(src, factor) {
+  const out = document.createElement('canvas');
+  out.width = Math.round(src.width * factor);
+  out.height = Math.round(src.height * factor);
+  const ctx = out.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, out.width, out.height);
+  return out;
+}
 
-  // Sort by score desc, then by length desc
-  const sorted = [...candidates.entries()]
-    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
-    .slice(0, 20);
+async function captureFromCamera() {
+  const video = document.getElementById('ocr-video');
+  if (!video.videoWidth) {
+    setOcrStatus('카메라 준비 중입니다. 잠시 후 다시 시도하세요.', 0);
+    return;
+  }
+  const canvas = document.getElementById('ocr-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  // 가이드 영역(90% x 80%) 크롭
+  const crop = document.createElement('canvas');
+  const cw = Math.round(canvas.width * 0.9);
+  const ch = Math.round(canvas.height * 0.8);
+  const cx = Math.round((canvas.width - cw) / 2);
+  const cy = Math.round((canvas.height - ch) / 2);
+  crop.width = cw; crop.height = ch;
+  crop.getContext('2d').drawImage(canvas, cx, cy, cw, ch, 0, 0, cw, ch);
+  preprocessCanvas(crop);
 
-  // Verify each against allErrors for known codes
-  const existingCodes = new Set(allErrors.map(e => String(e.code).toUpperCase()));
+  const preview = document.getElementById('ocr-preview');
+  preview.src = crop.toDataURL('image/jpeg', 0.9);
+  preview.classList.add('active');
+  document.getElementById('ocr-cam-wrap').classList.add('hidden');
+  document.getElementById('ocr-btns-capture').style.display = 'none';
+  document.getElementById('ocr-btns-after').style.display = 'grid';
+  stopCamera();
 
-  return sorted.map(([code, score]) => ({
-    code,
-    score,
-    known: existingCodes.has(code)
-  }));
+  await runOcr(crop);
 }
 
 async function handleOcrFile(file) {
   if (!file) return;
+  stopCamera();
+  document.getElementById('ocr-cam-wrap').classList.add('hidden');
+  document.getElementById('ocr-btns-capture').style.display = 'none';
+  document.getElementById('ocr-btns-after').style.display = 'grid';
 
-  // Clear previous state
-  document.getElementById('ocr-candidates').classList.remove('active');
-  document.getElementById('ocr-raw').classList.remove('active');
-
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await new Promise(r => { img.onload = r; });
+  const MAX = 1600;
+  let w = img.naturalWidth, h = img.naturalHeight;
+  if (Math.max(w, h) > MAX) {
+    const s = MAX / Math.max(w, h);
+    w = Math.round(w * s); h = Math.round(h * s);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  preprocessCanvas(canvas);
   const preview = document.getElementById('ocr-preview');
-  preview.src = URL.createObjectURL(file);
+  preview.src = canvas.toDataURL('image/jpeg', 0.9);
   preview.classList.add('active');
 
+  await runOcr(canvas);
+}
+
+// ---------- Tesseract worker (알파뉴메릭 허용) ----------
+let _tessWorker = null;
+async function getTessWorker() {
+  if (_tessWorker) return _tessWorker;
+  _tessWorker = await Tesseract.createWorker('eng', 1, {
+    logger: msg => {
+      if (msg.status === 'loading tesseract core' || msg.status === 'initializing tesseract') {
+        setOcrStatus('OCR 엔진 로딩 중...', 10);
+      } else if (msg.status === 'loading language traineddata') {
+        setOcrStatus('언어 데이터 다운로드 중...', 20);
+      } else if (msg.status === 'initializing api') {
+        setOcrStatus('인식 준비 중...', 30);
+      }
+    }
+  });
+  // 알파벳 대문자 + 숫자 + 하이픈/점/슬래시/공백
+  await _tessWorker.setParameters({
+    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/. ',
+    preserve_interword_spaces: '1',
+    tessedit_pageseg_mode: '6'
+  });
+  return _tessWorker;
+}
+
+async function runOcr(canvas) {
+  document.getElementById('ocr-matches').classList.remove('active');
+  document.getElementById('ocr-candidates').classList.remove('active');
   setOcrStatus('OCR 엔진 로딩 중...', 5);
 
   try {
-    const { data } = await Tesseract.recognize(
-      file,
-      'eng',
-      {
-        logger: msg => {
-          if (msg.status === 'loading tesseract core' || msg.status === 'initializing tesseract') {
-            setOcrStatus('OCR 엔진 로딩 중...', 10);
-          } else if (msg.status === 'loading language traineddata') {
-            setOcrStatus('언어 데이터 다운로드 중...', 20);
-          } else if (msg.status === 'initializing api') {
-            setOcrStatus('인식 준비 중...', 30);
-          } else if (msg.status === 'recognizing text') {
-            const p = 40 + (msg.progress || 0) * 55;
-            setOcrStatus(`이미지 분석 중... ${Math.round(p)}%`, p);
-          }
-        }
+    const worker = await getTessWorker();
+    const passes = [canvas];
+    if (canvas.width < 1200) passes.push(upscaleCanvas(canvas, 1.5));
+
+    let combined = '';
+    for (let i = 0; i < passes.length; i++) {
+      setOcrStatus(`이미지 분석 ${i+1}/${passes.length}...`, 40 + i * 25);
+      const src = passes[i].toDataURL('image/png');
+      const r1 = await worker.recognize(src);
+      combined += ' ' + (r1.data.text || '');
+      if (i === 0) {
+        await worker.setParameters({ tessedit_pageseg_mode: '11' });
+        const r2 = await worker.recognize(src);
+        combined += ' ' + (r2.data.text || '');
+        await worker.setParameters({ tessedit_pageseg_mode: '6' });
       }
-    );
-
-    const rawText = data.text || '';
-    setOcrStatus('분석 완료', 100);
-
-    // Show raw text
-    const rawEl = document.getElementById('ocr-raw');
-    rawEl.textContent = '인식된 전체 텍스트:\n' + (rawText.trim() || '(텍스트 없음)');
-    rawEl.classList.add('active');
-
-    // Extract candidates
-    const candidates = extractErrorCodeCandidates(rawText);
-    const list = document.getElementById('ocr-candidates-list');
-
-    if (candidates.length === 0) {
-      list.innerHTML = '<div class="empty-text" style="padding:8px;">에러코드 패턴을 찾지 못했습니다. 사진을 다시 찍거나, 수동 검색을 이용해주세요.</div>';
-    } else {
-      list.innerHTML = candidates.map(c => `
-        <button class="ocr-candidate ${c.known ? '' : 'weak'}" data-code="${esc(c.code)}" title="${c.known ? '✅ 등록된 에러코드' : '⚠️ 등록되지 않은 코드 (검색해 봅니다)'}">
-          ${esc(c.code)}${c.known ? ' ✓' : ''}
-        </button>
-      `).join('');
-      list.querySelectorAll('.ocr-candidate').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('keyword').value = btn.dataset.code;
-          closeOcr();
-          search();
-        });
-      });
     }
-    document.getElementById('ocr-candidates').classList.add('active');
+    setOcrStatus('매칭 계산 중...', 95);
 
+    const rawText = combined.toUpperCase();
+    const runs = alnumRuns(rawText);
+    document.getElementById('ocr-raw').textContent =
+      '🔤 추출된 코드 후보: ' + (runs.join(', ') || '(없음)') + '\n\nOCR 원문:\n' + (combined.trim() || '(텍스트 없음)');
+
+    const manual = document.getElementById('ocr-manual');
+    if (manual) {
+      const best = runs.slice().sort((a, b) => b.length - a.length)[0] || '';
+      manual.value = best;
+    }
+
+    const matches = fuzzyMatchErrorsV3(rawText);
+    renderMatches(matches);
+    renderCandidates(runs, matches.length === 0);
+
+    if (matches.length === 0) {
+      if (runs.length === 0) {
+        setOcrStatus('⚠️ 글자/숫자를 찾지 못했습니다. 더 가까이서 선명하게 다시 촬영하세요.', 0);
+      } else {
+        setOcrStatus(`⚠️ 코드 ${runs.length}개 추출 (${runs.join(', ')}) — DB 매칭 실패. 원문 편집으로 재검색하세요.`, 100);
+      }
+    } else {
+      setOcrStatus(`✅ 매칭 ${matches.length}건 · 추출 코드: ${runs.join(', ') || '—'}`, 100);
+    }
   } catch (e) {
     console.error('OCR 실패:', e);
     setOcrStatus('OCR 실패: ' + (e.message || e), 0);
   }
 }
 
+// ---------- 알파뉴메릭 유틸 ----------
+function alnumRuns(s, minLen = 3) {
+  if (!s) return [];
+  const arr = (String(s).match(/[A-Z0-9][A-Z0-9]{2,}/gi) || [])
+    .map(t => t.toUpperCase())
+    .filter(t => t.length >= minLen && t.length <= 20)
+    .filter(t => !/^(19|20)\d{2}$/.test(t));
+  return [...new Set(arr)];
+}
+function normCode(s) {
+  if (!s) return '';
+  return s.toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Longest Common Substring (연속 일치)
+function longestCommonSubstring(a, b) {
+  if (!a || !b) return '';
+  let best = '';
+  const la = a.length, lb = b.length;
+  for (let i = 0; i < la; i++) {
+    for (let j = 0; j < lb; j++) {
+      let k = 0;
+      while (i + k < la && j + k < lb && a[i + k] === b[j + k]) k++;
+      if (k > best.length) best = a.substr(i, k);
+    }
+  }
+  return best;
+}
+
+// ---------- 엄격 매칭: LCS 3+ ----------
+// 규칙: OCR에서 추출한 알파뉴메릭 run과 DB 에러코드의 정규화된 코드 사이에
+//       3자 이상 연속되는 공통 부분이 있을 때만 매칭.
+function fuzzyMatchErrorsV3(rawOcrText) {
+  const ocrRuns = alnumRuns(rawOcrText);
+  if (!ocrRuns.length) return [];
+
+  const scored = [];
+  for (const e of allErrors) {
+    const raw = e.code;
+    if (!raw) continue;
+    const codeNorm = normCode(raw);
+    if (codeNorm.length < 3) continue;
+
+    let bestLen = 0;
+    let bestHit = '';
+    for (const run of ocrRuns) {
+      const common = longestCommonSubstring(run, codeNorm);
+      if (common.length >= 3 && common.length > bestLen) {
+        bestLen = common.length;
+        bestHit = common;
+      }
+    }
+    if (bestLen >= 3) {
+      scored.push({ error: e, score: bestLen, hit: bestHit });
+    }
+  }
+  if (!scored.length) return [];
+
+  scored.sort((a, b) => b.score - a.score || (b.error.code || '').length - (a.error.code || '').length);
+  const topLen = scored[0].score;
+  let filtered;
+  if (topLen >= 4) {
+    filtered = scored.filter(x => x.score === topLen);
+  } else {
+    filtered = scored.filter(x => x.score >= 3);
+  }
+  return filtered.slice(0, 15);
+}
+
+// ---------- 매칭 결과 카드 ----------
+function renderMatches(matches) {
+  const wrap = document.getElementById('ocr-matches');
+  const list = document.getElementById('ocr-matches-list');
+  if (!matches.length) { wrap.classList.remove('active'); return; }
+  list.innerHTML = matches.map(m => {
+    const e = m.error;
+    const sc = m.score;
+    const cause = (e.cause || '').replace(/\s+/g, ' ').slice(0, 80);
+    const model = e.model || '';
+    const mfr = e.manufacturer || '';
+    const hit = m.hit ? `🔤 ${m.hit}` : '';
+    return `
+      <div class="ocr-match-card" data-id="${e.id}">
+        <span class="ocr-match-score">${sc}자</span>
+        <div class="ocr-match-body">
+          <div class="ocr-match-code">${esc(e.code || '')} · ${esc(mfr)}</div>
+          <div class="ocr-match-name">${esc(model)}</div>
+          ${cause ? `<div class="ocr-match-meta">💬 ${esc(cause)}</div>` : ''}
+          ${hit ? `<div class="ocr-match-meta" style="color:var(--primary-dark);font-weight:600;">${esc(hit)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  list.querySelectorAll('.ocr-match-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = Number(card.dataset.id);
+      const error = allErrors.find(x => x.id === id);
+      if (error) {
+        closeOcr();
+        showDetail(error);
+      }
+    });
+  });
+  wrap.classList.add('active');
+}
+
+function renderCandidates(runs, forceShow) {
+  const wrap = document.getElementById('ocr-candidates');
+  const list = document.getElementById('ocr-candidates-list');
+  if (!forceShow || !runs.length) { wrap.classList.remove('active'); return; }
+  list.innerHTML = runs.slice(0, 15).map(r =>
+    `<button class="ocr-candidate weak" data-code="${esc(r)}">${esc(r)}</button>`
+  ).join('');
+  list.querySelectorAll('.ocr-candidate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('keyword').value = btn.dataset.code;
+      closeOcr();
+      search();
+    });
+  });
+  wrap.classList.add('active');
+}
+
+function manualSearchFromOcr() {
+  const v = document.getElementById('ocr-manual').value.trim();
+  if (!v) return;
+  document.getElementById('keyword').value = v;
+  closeOcr();
+  search();
+}
+
+// ---------- 키워드 자동완성 ----------
+function buildSuggestions(query) {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const qNorm = normCode(q);
+  const seen = new Set();
+  const out = [];
+  for (const e of allErrors) {
+    const c = e.code;
+    if (!c) continue;
+    const cNorm = normCode(c);
+    if (!cNorm || seen.has(cNorm)) continue;
+    if (cNorm.includes(qNorm) || cNorm.startsWith(qNorm)) {
+      seen.add(cNorm);
+      out.push({ code: c, error: e });
+      if (out.length >= 10) return out;
+    }
+  }
+  return out;
+}
+
+function setupAutocomplete() {
+  const input = document.getElementById('keyword');
+  if (!input) return;
+  let box = document.getElementById('kw-ac');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'kw-ac';
+    box.style.cssText = 'position:absolute;background:white;border:1px solid #ddd;border-radius:6px;max-height:260px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:none;font-size:0.9rem;';
+    document.body.appendChild(box);
+  }
+  const render = () => {
+    const list = buildSuggestions(input.value);
+    if (!list.length) { box.style.display = 'none'; return; }
+    const rect = input.getBoundingClientRect();
+    box.style.left = (rect.left + window.scrollX) + 'px';
+    box.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+    box.style.width = rect.width + 'px';
+    box.innerHTML = list.map(s => `
+      <div class="kw-ac-item" data-code="${esc(s.code)}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;">
+        <div style="font-family:monospace;font-weight:700;color:#005fcc;">${esc(s.code)}</div>
+        <div style="font-size:0.78rem;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.error.manufacturer)} · ${esc((s.error.model||'').slice(0,60))}</div>
+      </div>
+    `).join('');
+    box.querySelectorAll('.kw-ac-item').forEach(el => {
+      el.addEventListener('mouseenter', () => { el.style.background = '#eff6ff'; });
+      el.addEventListener('mouseleave', () => { el.style.background = 'white'; });
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = el.dataset.code;
+        box.style.display = 'none';
+        search();
+      });
+    });
+    box.style.display = 'block';
+  };
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  input.addEventListener('blur', () => { setTimeout(() => { box.style.display = 'none'; }, 150); });
+}
+
 // 초기화
-document.addEventListener('DOMContentLoaded', () => {
-  loadData();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadData();
+  setupAutocomplete();
   document.getElementById('keyword')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') search();
   });
-  // ESC로 OCR 오버레이 닫기
+  document.getElementById('ocr-manual')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') manualSearchFromOcr();
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeOcr();
   });
