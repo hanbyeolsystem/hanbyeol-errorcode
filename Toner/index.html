@@ -1224,77 +1224,77 @@ function normCode(s) {
   return s.toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-// ---------- 숫자 전용 유틸 (OCR 매칭 전용) ----------
+// ---------- 숫자 전용 유틸 ----------
 // 문자열에서 3자 이상 연속된 숫자 run 만 추출
 function digitRuns(s, minLen = 3) {
   if (!s) return [];
   return (String(s).match(/\d{3,}/g) || []).filter(d => d.length >= minLen);
 }
-function onlyDigits(s) {
-  if (!s) return '';
-  return String(s).replace(/\D/g, '');
+
+// 두 문자열의 Longest Common Substring (연속 일치 부분 — subsequence 아님)
+function longestCommonSubstring(a, b) {
+  if (!a || !b) return '';
+  let best = '';
+  const la = a.length, lb = b.length;
+  for (let i = 0; i < la; i++) {
+    for (let j = 0; j < lb; j++) {
+      let k = 0;
+      while (i + k < la && j + k < lb && a[i + k] === b[j + k]) k++;
+      if (k > best.length) best = a.substr(i, k);
+    }
+  }
+  return best;
 }
 
-// ---------- 퍼지 매칭 V3 (숫자 전용 OCR 매칭) ----------
-// OCR은 문자/기호 오인식이 잦으므로, "숫자 run"만 추출해서 DB의 숫자 run과 비교.
-// 예) OCR "8 110" or "8110" or "BllO" → 모두 숫자 run "8110"으로 정규화 → DB "TK-8110KY"의 숫자 "8110"과 매치
+// ---------- 퍼지 매칭 V5 (엄격한 숫자 3자리+ 공통 부분문자열) ----------
+// 규칙:
+//   - OCR 숫자 run 과 DB 숫자 run 사이에 "3자리 이상 연속되는 공통 부분"이 존재해야 매칭
+//   - 길이가 길수록 더 강한 매칭
+//   - 포함/Levenshtein 등 느슨한 로직 제거 → 노이즈 감소
 function fuzzyMatchTonersV3(rawOcrText) {
-  const ocrRuns = digitRuns(rawOcrText);
-  const ocrConcat = onlyDigits(rawOcrText);   // 전체 숫자만 이어붙인 것 (fallback용)
-  if (!ocrRuns.length && ocrConcat.length < 3) return [];
+  const ocrRuns = digitRuns(rawOcrText, 3);
+  if (!ocrRuns.length) return [];
 
   const scored = [];
   for (const t of allToners) {
-    // DB 레코드에서 모든 숫자 run 모으기
     const raws = [t.part_code, t.toner_model, t.part_name, t.gg_code, t.compatible_models].filter(Boolean);
     const dbRuns = new Set();
-    raws.forEach(r => digitRuns(r).forEach(d => dbRuns.add(d)));
+    raws.forEach(r => digitRuns(r, 3).forEach(d => dbRuns.add(d)));
     if (!dbRuns.size) continue;
 
-    let best = 0;
+    let bestLen = 0;
     let bestHit = '';
 
     for (const dbRun of dbRuns) {
-      // A. OCR run 들과 완전 일치/부분 일치
       for (const ocrRun of ocrRuns) {
-        if (ocrRun === dbRun) {
-          // 완전 일치 — 최고 점수 (길이 가중)
-          const s = 120 + dbRun.length * 8;
-          if (s > best) { best = s; bestHit = dbRun; }
-        } else if (ocrRun.includes(dbRun) && dbRun.length >= 3) {
-          // OCR run 이 DB run 을 포함 (예: OCR "81101" 에서 DB "8110" 찾기)
-          const s = 90 + dbRun.length * 5;
-          if (s > best) { best = s; bestHit = dbRun; }
-        } else if (dbRun.includes(ocrRun) && ocrRun.length >= 3) {
-          // DB run 이 OCR run 을 포함 (예: DB "81100" 에 OCR "8110")
-          const s = 70 + ocrRun.length * 5;
-          if (s > best) { best = s; bestHit = ocrRun; }
-        }
-      }
-      // B. OCR 전체 숫자 concat 에 DB run 이 포함되는 경우 (여러 토큰에 걸쳐 있을 때)
-      if (ocrConcat.length >= dbRun.length && ocrConcat.includes(dbRun)) {
-        const s = 50 + dbRun.length * 3;
-        if (s > best) { best = s; bestHit = dbRun; }
-      }
-      // C. 1자 오인식 허용 (Levenshtein 1, 길이 4+ 만)
-      if (dbRun.length >= 4) {
-        for (const ocrRun of ocrRuns) {
-          if (Math.abs(ocrRun.length - dbRun.length) <= 1 && ocrRun !== dbRun) {
-            const d = levenshtein(ocrRun, dbRun);
-            if (d === 1) {
-              const s = 60 + dbRun.length * 3;
-              if (s > best) { best = s; bestHit = ocrRun + '≈' + dbRun; }
-            }
-          }
+        const common = longestCommonSubstring(ocrRun, dbRun);
+        if (common.length >= 3 && common.length > bestLen) {
+          bestLen = common.length;
+          bestHit = common;
         }
       }
     }
-    if (best > 0) scored.push({ toner: t, score: best, hit: bestHit });
+
+    // 3자리 이상 공통 부분이 있을 때만 결과 포함
+    if (bestLen >= 3) {
+      scored.push({ toner: t, score: bestLen, hit: bestHit });
+    }
   }
 
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+  if (!scored.length) return [];
+
+  // 가장 긴 공통 매칭 길이를 기준으로 필터
+  scored.sort((a, b) => b.score - a.score || (b.toner.part_code || '').length - (a.toner.part_code || '').length);
+  const topLen = scored[0].score;
+  // 최고 매칭 길이가 4자 이상이면 topLen 만 표시 (noise 제거)
+  // 최고 매칭이 3자면 3자 매칭을 모두 보여주되 상위 15건으로 제한
+  let filtered;
+  if (topLen >= 4) {
+    filtered = scored.filter(x => x.score === topLen);
+  } else {
+    filtered = scored.filter(x => x.score >= 3);
+  }
+  return filtered.slice(0, 15);
 }
 
 function renderMatches(matches) {
