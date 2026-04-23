@@ -241,9 +241,9 @@ html, body {
 
 .search-box {
   display: grid;
-  grid-template-columns: 200px 200px 1fr 100px;
+  grid-template-columns: 180px 180px 1fr 56px 100px;
   gap: 12px;
-  max-width: 1000px;
+  max-width: 1050px;
 }
 
 .search-box select,
@@ -273,6 +273,205 @@ html, body {
 
 .btn-search:hover {
   background: #ffb300;
+}
+
+.btn-camera {
+  padding: 12px 8px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.2s;
+}
+
+.btn-camera:hover {
+  background: #ee5a5a;
+}
+
+/* OCR 오버레이 */
+.ocr-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ocr-overlay.active { display: flex; }
+
+.ocr-panel {
+  background: white;
+  border-radius: 12px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.ocr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ocr-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ocr-close {
+  background: #f5f5f5;
+  border: none;
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.ocr-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ocr-btn {
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.ocr-btn:hover { background: var(--primary-dark); }
+.ocr-btn.secondary { background: #6c757d; }
+.ocr-btn.secondary:hover { background: #5a6268; }
+
+.ocr-preview {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.ocr-preview.active { display: block; }
+
+.ocr-status {
+  background: #f5f5f5;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  display: none;
+}
+
+.ocr-status.active { display: block; }
+
+.ocr-progress-bar {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.ocr-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.2s;
+}
+
+.ocr-candidates {
+  display: none;
+  margin-top: 12px;
+}
+
+.ocr-candidates.active { display: block; }
+
+.ocr-candidates-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.ocr-candidates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ocr-candidate {
+  padding: 8px 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-family: monospace;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.ocr-candidate:hover {
+  background: var(--primary-dark);
+  transform: scale(1.05);
+}
+
+.ocr-candidate.weak {
+  background: #adb5bd;
+}
+
+.ocr-candidate.weak:hover { background: #868e96; }
+
+.ocr-raw {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+  display: none;
+}
+
+.ocr-raw.active { display: block; }
+
+.ocr-hint {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  background: #fff8e1;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-top: 12px;
 }
 
 /* ===== 결과 영역 ===== */
@@ -540,9 +739,24 @@ html, body {
 
   /* 검색 박스: 모바일은 제조사 + 키워드 + 검색 버튼만 */
   .search-box {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
     max-width: 100%;
+  }
+
+  .search-box select,
+  .search-box input,
+  .search-box .btn-search {
+    grid-column: 1 / -1;
+  }
+
+  .btn-camera {
+    grid-column: 1;
+    padding: 12px;
+  }
+
+  .btn-search {
+    grid-column: 2 / -1 !important;
   }
 
   /* 모바일에서 카테고리 드롭다운 숨김 */
@@ -689,6 +903,7 @@ html, body {
               id="keyword"
               placeholder="예: 1000, JAM, 급지 이상..."
             >
+            <button class="btn-camera" onclick="openOcr()" title="사진으로 에러코드 검색">📷</button>
             <button class="btn-search" onclick="search()">검색</button>
           </div>
         </div>
@@ -707,6 +922,40 @@ html, body {
   </div>
 </div>
 
+<!-- OCR 오버레이 (사진으로 에러코드 검색) -->
+<div class="ocr-overlay" id="ocr-overlay" onclick="if(event.target===this)closeOcr()">
+  <div class="ocr-panel">
+    <div class="ocr-header">
+      <div class="ocr-title">📷 사진으로 에러코드 검색</div>
+      <button class="ocr-close" onclick="closeOcr()">✕</button>
+    </div>
+
+    <div class="ocr-buttons">
+      <button class="ocr-btn" onclick="document.getElementById('ocr-camera').click()">📸 사진 찍기</button>
+      <button class="ocr-btn secondary" onclick="document.getElementById('ocr-upload').click()">🖼️ 파일 선택</button>
+    </div>
+    <input type="file" id="ocr-camera" accept="image/*" capture="environment" style="display:none" onchange="handleOcrFile(this.files[0])">
+    <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOcrFile(this.files[0])">
+
+    <img id="ocr-preview" class="ocr-preview" alt="preview">
+    <div id="ocr-status" class="ocr-status">
+      <div id="ocr-status-text">이미지 분석 중...</div>
+      <div class="ocr-progress-bar"><div id="ocr-progress-fill" class="ocr-progress-fill"></div></div>
+    </div>
+
+    <div id="ocr-candidates" class="ocr-candidates">
+      <div class="ocr-candidates-title">🎯 인식된 에러코드 후보 (클릭하면 검색)</div>
+      <div id="ocr-candidates-list" class="ocr-candidates-list"></div>
+    </div>
+
+    <pre id="ocr-raw" class="ocr-raw"></pre>
+
+    <div class="ocr-hint">
+      💡 <strong>팁:</strong> 프린터 화면 / 라벨의 에러코드 부분을 최대한 확대해서 찍으면 정확도가 올라갑니다. 빛 반사나 흔들림은 피해주세요.
+    </div>
+  </div>
+</div>
+
 <!-- 상세 패널 -->
 <div class="detail-panel" id="detail-panel">
   <div class="detail-header">
@@ -718,6 +967,7 @@ html, body {
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 let allErrors = [];
 let dataLoaded = false;
@@ -950,11 +1200,158 @@ function closeDetail() {
   document.getElementById('detail-panel').classList.remove('active');
 }
 
+// ==================== OCR (사진으로 에러코드 검색) ====================
+function openOcr() {
+  document.getElementById('ocr-overlay').classList.add('active');
+}
+
+function closeOcr() {
+  document.getElementById('ocr-overlay').classList.remove('active');
+}
+
+function setOcrStatus(text, progressPct) {
+  const s = document.getElementById('ocr-status');
+  s.classList.add('active');
+  document.getElementById('ocr-status-text').textContent = text;
+  if (typeof progressPct === 'number') {
+    document.getElementById('ocr-progress-fill').style.width = Math.min(100, Math.max(0, progressPct)) + '%';
+  }
+}
+
+function extractErrorCodeCandidates(rawText) {
+  // Normalize text: collapse whitespace, strip unusual chars
+  const text = rawText.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ');
+
+  // Collect candidate codes with priority scoring
+  const candidates = new Map(); // code -> score
+
+  // 1. Strong patterns (typical error code formats)
+  const strongPatterns = [
+    /\b([A-Z]{1,3}[\-\s]?\d{2,4}[\-\s]?\d{0,4}[A-Z]?)\b/g,   // E100-0001, SC1004, C1004, U0155
+    /\b(\d{3,4}[\-\.]\d{1,4})\b/g,                            // 071-100, 6.41
+    /\b([A-Z]\d{3,5})\b/g,                                    // E1234, C12345
+    /\b(\d{4})\b/g,                                           // 1010, 2000 (Kyocera-style 4-digit)
+    /\b([A-Z]{2}\d{2,4})\b/g,                                 // SC101, JAM32
+  ];
+
+  strongPatterns.forEach((re, idx) => {
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      let code = m[1].replace(/\s/g, '').toUpperCase();
+      // Reject noise: too generic like "2024", "2023" (year-looking), too many zeros only
+      if (/^(19|20)\d{2}$/.test(code)) continue;              // year
+      if (/^0{3,}$/.test(code)) continue;                      // all zeros
+      if (code.length < 3 || code.length > 14) continue;
+      const score = 10 - idx;
+      candidates.set(code, Math.max(candidates.get(code) || 0, score));
+    }
+  });
+
+  // 2. Weak patterns - short numbers 2-3 digits, letters
+  const weakRegex = /\b([A-Z0-9]{2,4})\b/g;
+  let m;
+  while ((m = weakRegex.exec(text)) !== null) {
+    const code = m[1].toUpperCase();
+    if (candidates.has(code)) continue;
+    if (/^\d{1,2}$/.test(code)) continue;                      // too short
+    if (/^(19|20)\d{2}$/.test(code)) continue;
+    if (code.length < 2) continue;
+    candidates.set(code, 1);
+  }
+
+  // Sort by score desc, then by length desc
+  const sorted = [...candidates.entries()]
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, 20);
+
+  // Verify each against allErrors for known codes
+  const existingCodes = new Set(allErrors.map(e => String(e.code).toUpperCase()));
+
+  return sorted.map(([code, score]) => ({
+    code,
+    score,
+    known: existingCodes.has(code)
+  }));
+}
+
+async function handleOcrFile(file) {
+  if (!file) return;
+
+  // Clear previous state
+  document.getElementById('ocr-candidates').classList.remove('active');
+  document.getElementById('ocr-raw').classList.remove('active');
+
+  const preview = document.getElementById('ocr-preview');
+  preview.src = URL.createObjectURL(file);
+  preview.classList.add('active');
+
+  setOcrStatus('OCR 엔진 로딩 중...', 5);
+
+  try {
+    const { data } = await Tesseract.recognize(
+      file,
+      'eng',
+      {
+        logger: msg => {
+          if (msg.status === 'loading tesseract core' || msg.status === 'initializing tesseract') {
+            setOcrStatus('OCR 엔진 로딩 중...', 10);
+          } else if (msg.status === 'loading language traineddata') {
+            setOcrStatus('언어 데이터 다운로드 중...', 20);
+          } else if (msg.status === 'initializing api') {
+            setOcrStatus('인식 준비 중...', 30);
+          } else if (msg.status === 'recognizing text') {
+            const p = 40 + (msg.progress || 0) * 55;
+            setOcrStatus(`이미지 분석 중... ${Math.round(p)}%`, p);
+          }
+        }
+      }
+    );
+
+    const rawText = data.text || '';
+    setOcrStatus('분석 완료', 100);
+
+    // Show raw text
+    const rawEl = document.getElementById('ocr-raw');
+    rawEl.textContent = '인식된 전체 텍스트:\n' + (rawText.trim() || '(텍스트 없음)');
+    rawEl.classList.add('active');
+
+    // Extract candidates
+    const candidates = extractErrorCodeCandidates(rawText);
+    const list = document.getElementById('ocr-candidates-list');
+
+    if (candidates.length === 0) {
+      list.innerHTML = '<div class="empty-text" style="padding:8px;">에러코드 패턴을 찾지 못했습니다. 사진을 다시 찍거나, 수동 검색을 이용해주세요.</div>';
+    } else {
+      list.innerHTML = candidates.map(c => `
+        <button class="ocr-candidate ${c.known ? '' : 'weak'}" data-code="${esc(c.code)}" title="${c.known ? '✅ 등록된 에러코드' : '⚠️ 등록되지 않은 코드 (검색해 봅니다)'}">
+          ${esc(c.code)}${c.known ? ' ✓' : ''}
+        </button>
+      `).join('');
+      list.querySelectorAll('.ocr-candidate').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('keyword').value = btn.dataset.code;
+          closeOcr();
+          search();
+        });
+      });
+    }
+    document.getElementById('ocr-candidates').classList.add('active');
+
+  } catch (e) {
+    console.error('OCR 실패:', e);
+    setOcrStatus('OCR 실패: ' + (e.message || e), 0);
+  }
+}
+
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   document.getElementById('keyword')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') search();
+  });
+  // ESC로 OCR 오버레이 닫기
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeOcr();
   });
 });
 </script>
