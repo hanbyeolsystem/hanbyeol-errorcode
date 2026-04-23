@@ -118,8 +118,8 @@ html, body {
 
 .search-box {
   display: grid;
-  grid-template-columns: 200px 200px 1fr 100px;
-  gap: 12px; max-width: 1000px;
+  grid-template-columns: 180px 180px 1fr 56px 100px;
+  gap: 12px; max-width: 1050px;
 }
 .search-box select, .search-box input {
   padding: 12px 14px; border: none;
@@ -134,6 +134,168 @@ html, body {
   font-weight: 600; cursor: pointer; transition: background 0.2s;
 }
 .btn-search:hover { background: #ffb300; }
+
+.btn-camera {
+  padding: 12px 8px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.2s;
+}
+.btn-camera:hover { background: #ee5a5a; }
+
+/* OCR 오버레이 */
+.ocr-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ocr-overlay.active { display: flex; }
+.ocr-panel {
+  background: white;
+  border-radius: 12px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.ocr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ocr-title { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+.ocr-close {
+  background: #f5f5f5;
+  border: none;
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.ocr-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.ocr-btn {
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.ocr-btn:hover { background: var(--primary-dark); }
+.ocr-btn.secondary { background: #6c757d; }
+.ocr-btn.secondary:hover { background: #5a6268; }
+.ocr-preview {
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  display: none;
+}
+.ocr-preview.active { display: block; }
+.ocr-status {
+  background: #f5f5f5;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  display: none;
+}
+.ocr-status.active { display: block; }
+.ocr-progress-bar {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.ocr-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.2s;
+}
+.ocr-candidates { display: none; margin-top: 12px; }
+.ocr-candidates.active { display: block; }
+.ocr-candidates-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.ocr-candidates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ocr-candidate {
+  padding: 8px 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-family: monospace;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: transform 0.15s, background 0.2s;
+}
+.ocr-candidate:hover {
+  background: var(--primary-dark);
+  transform: scale(1.05);
+}
+.ocr-candidate.weak { background: #adb5bd; }
+.ocr-candidate.weak:hover { background: #868e96; }
+.ocr-raw {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+  display: none;
+}
+.ocr-raw.active { display: block; }
+.ocr-hint {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  background: #fff8e1;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+}
 
 /* RESULTS */
 .results-wrapper {
@@ -297,7 +459,11 @@ html, body {
   .hero-title { font-size: 1.3rem; }
   .hero-icon { font-size: 1.4rem; }
   .hero-subtitle { font-size: 0.85rem; margin-bottom: 14px; }
-  .search-box { grid-template-columns: 1fr; gap: 8px; max-width: 100%; }
+  .search-box { grid-template-columns: 1fr 1fr; gap: 8px; max-width: 100%; }
+  .search-box select,
+  .search-box input { grid-column: 1 / -1; }
+  .btn-camera { grid-column: 1; padding: 12px; }
+  .btn-search { grid-column: 2 / -1 !important; }
   .results-wrapper { padding: 12px; max-width: 100%; }
   .results-grid { grid-template-columns: 1fr; gap: 12px; }
   .toner-card { padding: 12px; }
@@ -367,6 +533,7 @@ html, body {
               <option value="">모든 유형</option>
             </select>
             <input type="text" id="keyword" placeholder="토너명/모델명/프린터명 모두 검색 (예: TN-323, MLT-D203, Bizhub, LaserJet, iR, HP-1010)" />
+            <button class="btn-camera" onclick="openOcr()" title="사진으로 토너 검색">📷</button>
             <button class="btn-search" onclick="search()">검색</button>
           </div>
         </div>
@@ -384,6 +551,39 @@ html, body {
   </div>
 </div>
 
+<!-- OCR 오버레이 (사진으로 토너 검색) -->
+<div class="ocr-overlay" id="ocr-overlay" onclick="if(event.target===this)closeOcr()">
+  <div class="ocr-panel">
+    <div class="ocr-header">
+      <div class="ocr-title">📷 사진으로 토너 검색</div>
+      <button class="ocr-close" onclick="closeOcr()">✕</button>
+    </div>
+    <div class="ocr-buttons">
+      <button class="ocr-btn" onclick="document.getElementById('ocr-camera').click()">📸 사진 찍기</button>
+      <button class="ocr-btn secondary" onclick="document.getElementById('ocr-upload').click()">🖼️ 파일 선택</button>
+    </div>
+    <input type="file" id="ocr-camera" accept="image/*" capture="environment" style="display:none" onchange="handleOcrFile(this.files[0])">
+    <input type="file" id="ocr-upload" accept="image/*" style="display:none" onchange="handleOcrFile(this.files[0])">
+
+    <img id="ocr-preview" class="ocr-preview" alt="preview">
+    <div id="ocr-status" class="ocr-status">
+      <div id="ocr-status-text">이미지 분석 중...</div>
+      <div class="ocr-progress-bar"><div id="ocr-progress-fill" class="ocr-progress-fill"></div></div>
+    </div>
+
+    <div id="ocr-candidates" class="ocr-candidates">
+      <div class="ocr-candidates-title">🎯 인식된 토너 코드 후보 (클릭하면 검색)</div>
+      <div id="ocr-candidates-list" class="ocr-candidates-list"></div>
+    </div>
+
+    <pre id="ocr-raw" class="ocr-raw"></pre>
+
+    <div class="ocr-hint">
+      💡 <strong>팁:</strong> 토너 카트리지 라벨의 모델코드(예: TK-8110, MLT-D203, CE255A)를 확대해서 찍으면 정확도가 올라갑니다.
+    </div>
+  </div>
+</div>
+
 <div class="detail-panel" id="detail-panel">
   <div class="detail-header">
     <div>상세 정보</div>
@@ -392,6 +592,7 @@ html, body {
   <div class="detail-content" id="detail-content"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 let allToners = [];
 let dataLoaded = false;
@@ -620,10 +821,168 @@ function closeDetail() {
   document.getElementById('detail-panel').classList.remove('active');
 }
 
+// ==================== OCR (사진으로 토너 검색) ====================
+function openOcr() {
+  document.getElementById('ocr-overlay').classList.add('active');
+}
+
+function closeOcr() {
+  document.getElementById('ocr-overlay').classList.remove('active');
+}
+
+function setOcrStatus(text, progressPct) {
+  const s = document.getElementById('ocr-status');
+  s.classList.add('active');
+  document.getElementById('ocr-status-text').textContent = text;
+  if (typeof progressPct === 'number') {
+    document.getElementById('ocr-progress-fill').style.width = Math.min(100, Math.max(0, progressPct)) + '%';
+  }
+}
+
+function extractTonerCodeCandidates(rawText) {
+  const text = rawText.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ');
+  const candidates = new Map();
+
+  // 토너 코드 패턴 (우선순위 높음 → 낮음)
+  const strongPatterns = [
+    // MLT-D203L, MLT-K200L, CLT-K603L, CLT-Y504S (Samsung)
+    /\b((?:MLT|CLT|SCX)-[A-Z]?\d{2,4}[A-Z]?)\b/gi,
+    // TK-8110, TK-5234, TK-7120K (Kyocera)
+    /\b(TK-\d{3,5}[A-Z]?)\b/gi,
+    // TN-323, TN-217, TN-414, TN-216, TN-321, TN-227 (Konica Minolta / Brother)
+    /\b(TN-?\d{2,4}[A-Z]?)\b/gi,
+    // DR-312, DR-512 (드럼)
+    /\b(DR-?\d{2,4}[A-Z]?)\b/gi,
+    // CRG-328, CRG-057, NPG-46, NPG-83, GPR (Canon)
+    /\b((?:CRG|NPG|GPR|FX)-\d{2,4}[A-Z]*)\b/gi,
+    // CE255A, CE278A, CF283A, CF283X, CB435A, CB436A, Q6511A, W2220A (HP)
+    /\b([CEQW][BDFECFHKLMPQX]?\d{3,4}[A-Z]{1,2})\b/gi,
+    // HP-1010, HP-P1005, HP-M507, HP-2400 (토너닷 형식)
+    /\b(HP-[A-Z]?\d{3,5}[A-Z]*)\b/gi,
+    // MLT, CLT, D203, K200, D101S, D103L
+    /\b([DK]\d{3}[A-Z]{1,2})\b/gi,
+    // A0ED9407FR, A0ED940700 (Konica part codes)
+    /\b(A0[A-Z0-9]{6,10})\b/gi,
+    // S050690 (Epson)
+    /\b(S0\d{4,6})\b/gi,
+  ];
+
+  strongPatterns.forEach((re, idx) => {
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const code = m[1].toUpperCase().replace(/\s/g, '');
+      if (code.length < 4 || code.length > 16) continue;
+      const score = 10 - idx;
+      candidates.set(code, Math.max(candidates.get(code) || 0, score));
+    }
+  });
+
+  // 약한 패턴: 일반 alphanumeric (4-8자)
+  const weakRe = /\b([A-Z0-9\-]{4,10})\b/g;
+  let m;
+  while ((m = weakRe.exec(text)) !== null) {
+    const code = m[1].toUpperCase();
+    if (candidates.has(code)) continue;
+    if (/^(19|20)\d{2}$/.test(code)) continue;     // 연도
+    if (/^[A-Z]+$/.test(code)) continue;            // 문자만 (단어일 가능성)
+    if (/^\d+$/.test(code) && code.length < 4) continue;
+    if (!/[A-Z]/.test(code) && !/-/.test(code)) continue;  // 너무 평범한 숫자 제외
+    candidates.set(code, 1);
+  }
+
+  const sorted = [...candidates.entries()]
+    .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)
+    .slice(0, 20);
+
+  // 실제 데이터와 매칭되는지 체크
+  const matchesKnown = (code) => {
+    const c = code.toLowerCase();
+    return allToners.some(t => {
+      const fields = [t.part_code, t.part_name, t.toner_model, t.compatible_models, t.gg_code];
+      return fields.some(f => f && String(f).toLowerCase().includes(c));
+    });
+  };
+
+  return sorted.map(([code, score]) => ({
+    code,
+    score,
+    known: matchesKnown(code)
+  }));
+}
+
+async function handleOcrFile(file) {
+  if (!file) return;
+
+  document.getElementById('ocr-candidates').classList.remove('active');
+  document.getElementById('ocr-raw').classList.remove('active');
+
+  const preview = document.getElementById('ocr-preview');
+  preview.src = URL.createObjectURL(file);
+  preview.classList.add('active');
+
+  setOcrStatus('OCR 엔진 로딩 중...', 5);
+
+  try {
+    const { data } = await Tesseract.recognize(
+      file,
+      'eng',
+      {
+        logger: msg => {
+          if (msg.status === 'loading tesseract core' || msg.status === 'initializing tesseract') {
+            setOcrStatus('OCR 엔진 로딩 중...', 10);
+          } else if (msg.status === 'loading language traineddata') {
+            setOcrStatus('언어 데이터 다운로드 중...', 20);
+          } else if (msg.status === 'initializing api') {
+            setOcrStatus('인식 준비 중...', 30);
+          } else if (msg.status === 'recognizing text') {
+            const p = 40 + (msg.progress || 0) * 55;
+            setOcrStatus(`이미지 분석 중... ${Math.round(p)}%`, p);
+          }
+        }
+      }
+    );
+
+    const rawText = data.text || '';
+    setOcrStatus('분석 완료', 100);
+
+    const rawEl = document.getElementById('ocr-raw');
+    rawEl.textContent = '인식된 전체 텍스트:\n' + (rawText.trim() || '(텍스트 없음)');
+    rawEl.classList.add('active');
+
+    const candidates = extractTonerCodeCandidates(rawText);
+    const list = document.getElementById('ocr-candidates-list');
+
+    if (candidates.length === 0) {
+      list.innerHTML = '<div style="padding:8px;color:var(--text-light);font-size:0.85rem;">토너 코드 패턴을 찾지 못했습니다. 사진을 다시 찍거나 수동 검색을 이용해주세요.</div>';
+    } else {
+      list.innerHTML = candidates.map(c => `
+        <button class="ocr-candidate ${c.known ? '' : 'weak'}" data-code="${esc(c.code)}" title="${c.known ? '✅ DB 일치' : '⚠️ DB 미일치 (검색 시도)'}">
+          ${esc(c.code)}${c.known ? ' ✓' : ''}
+        </button>
+      `).join('');
+      list.querySelectorAll('.ocr-candidate').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('keyword').value = btn.dataset.code;
+          closeOcr();
+          search();
+        });
+      });
+    }
+    document.getElementById('ocr-candidates').classList.add('active');
+
+  } catch (e) {
+    console.error('OCR 실패:', e);
+    setOcrStatus('OCR 실패: ' + (e.message || e), 0);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   document.getElementById('keyword')?.addEventListener('keypress', e => {
     if (e.key === 'Enter') search();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeOcr();
   });
 });
 </script>
