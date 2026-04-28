@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한별시스템 문서 발행</title>
+<style>
+/* ===== RESET & VARIABLES ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1a56db;--blue-d:#1e3a8a;--blue-l:#e8f0fe;--blue-m:#3b82f6;
+  --green:#059669;--red:#dc2626;--orange:#d97706;--purple:#7c3aed;
+  --gray:#6b7280;--gray-l:#f8fafc;--border:#e2e8f0;--white:#fff;
+  --shadow:0 1px 3px rgba(0,0,0,.1);--shadow-md:0 4px 12px rgba(0,0,0,.15);
+}
+body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+
+/* ===== HEADER ===== */
+header{
+  background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);
+  color:#fff;height:54px;display:flex;align-items:center;
+  padding:0 16px;gap:10px;position:fixed;top:0;left:0;right:0;z-index:200;
+  box-shadow:0 2px 10px rgba(0,0,0,.3)
+}
+.hd-logo{font-size:16px;font-weight:800;letter-spacing:-0.5px;white-space:nowrap}
+.hd-sep{color:rgba(255,255,255,.3);margin:0 4px}
+.hd-btns{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.hd-btn{
+  padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:12px;
+  font-family:inherit;transition:all .15s;white-space:nowrap
+}
+.hd-btn:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)}
+.hd-btn.primary{background:var(--blue-m);border-color:var(--blue-m)}
+.hd-btn.success{background:var(--green);border-color:var(--green)}
+.hd-btn.warning{background:var(--orange);border-color:var(--orange)}
+
+/* ===== LAYOUT ===== */
+.layout{display:flex;height:calc(100vh - 54px);margin-top:54px;overflow:hidden}
+.left-panel{
+  width:380px;flex-shrink:0;overflow-y:auto;background:var(--white);
+  border-right:1px solid var(--border);display:flex;flex-direction:column
+}
+.right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f8fafc}
+
+/* ===== LEFT PANEL ===== */
+.section{border-bottom:1px solid var(--border)}
+.section-hd{
+  padding:10px 14px;background:var(--gray-l);cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  font-weight:700;font-size:12px;color:#374151;user-select:none;
+  border-bottom:1px solid var(--border)
+}
+.section-hd:hover{background:#eef2f7}
+.section-hd .arrow{transition:transform .2s;font-size:10px}
+.section-hd.open .arrow{transform:rotate(180deg)}
+.section-body{padding:12px 14px;display:none}
+.section-body.open{display:block}
+
+/* ===== CUSTOMER SECTION ===== */
+.cust-select-row{display:flex;gap:6px;margin-bottom:10px}
+.cust-select-row select{flex:1;padding:7px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:#fff}
+.cust-select-row select:focus{outline:none;border-color:var(--blue)}
+
+/* ===== FORM ===== */
+.frow{display:grid;gap:6px;margin-bottom:6px}
+.frow.c2{grid-template-columns:1fr 1fr}
+.frow.c3{grid-template-columns:1fr 1fr 1fr}
+.frow.c1{grid-template-columns:1fr}
+label{font-size:11px;color:var(--gray);display:block;margin-bottom:2px}
+input[type=text],input[type=date],input[type=number],select.field,textarea{
+  width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;
+  font-size:12px;font-family:inherit;background:#fafafa;transition:border .15s
+}
+input:focus,select.field:focus,textarea:focus{outline:none;border-color:var(--blue);background:#fff}
+textarea{resize:vertical;min-height:52px}
+
+/* ===== ITEMS TABLE ===== */
+.items-wrap{overflow-x:auto;margin-bottom:6px}
+.items-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:480px}
+.items-tbl th{background:#1e3a8a;color:#fff;padding:5px 4px;text-align:center;border:1px solid #1e3a8a}
+.items-tbl td{border:1px solid var(--border);padding:2px 3px}
+.items-tbl td input{border:none;background:transparent;padding:3px 4px;font-size:11px;width:100%;font-family:inherit}
+.items-tbl td input:focus{outline:1px solid var(--blue-m);border-radius:2px}
+.items-tbl td.amt{text-align:right;padding-right:6px;font-weight:600;color:#1e3a8a}
+.items-tbl tr:nth-child(even) td{background:#f8fafc}
+.del-btn{background:var(--red);color:#fff;border:none;border-radius:3px;padding:2px 6px;cursor:pointer;font-size:10px}
+.add-row-btn{
+  width:100%;padding:6px;background:var(--blue-l);color:var(--blue);
+  border:1px dashed var(--blue);border-radius:5px;cursor:pointer;
+  font-size:12px;font-family:inherit;font-weight:700
+}
+.add-row-btn:hover{background:#d1dffe}
+
+/* ===== BUTTONS ===== */
+.btn{
+  padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:opacity .15s;display:inline-flex;
+  align-items:center;gap:4px
+}
+.btn:hover{opacity:.85}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-gray{background:#e5e7eb;color:#374151}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+/* ===== RIGHT PANEL - TABS ===== */
+.doc-tabs{
+  display:flex;padding:10px 16px 0;background:var(--white);
+  border-bottom:2px solid var(--border);gap:4px;flex-shrink:0
+}
+.doc-tab{
+  padding:8px 18px;border:1px solid var(--border);border-bottom:none;
+  border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;
+  background:#f8fafc;color:var(--gray);transition:all .15s;font-family:inherit
+}
+.doc-tab.active{background:var(--white);color:var(--blue);border-color:var(--border);
+  border-bottom:2px solid var(--white);margin-bottom:-2px}
+.doc-tab:hover:not(.active){background:#e8f0fe;color:var(--blue)}
+
+/* ===== PREVIEW ===== */
+.preview-area{flex:1;overflow-y:auto;padding:20px}
+.preview-wrap{background:var(--white);border-radius:8px;box-shadow:var(--shadow-md);overflow:hidden}
+.preview-bar{
+  background:#1e293b;color:#fff;padding:8px 16px;
+  display:flex;align-items:center;justify-content:space-between;font-size:12px
+}
+
+/* ===== ACTION BAR ===== */
+.action-bar{
+  background:var(--white);border-top:1px solid var(--border);
+  padding:10px 16px;display:flex;gap:8px;align-items:center;flex-shrink:0
+}
+.action-bar .sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+
+/* ===== MODALS ===== */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:1000;align-items:center;justify-content:center
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:var(--white);border-radius:12px;width:90%;max-width:560px;
+  max-height:90vh;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.3)
+}
+.modal-hd{
+  padding:14px 18px;background:var(--blue-d);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0
+}
+.modal-hd h2{font-size:15px}
+.modal-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+.modal-body{padding:18px;overflow-y:auto;flex:1}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* ===== DOC TITLE BADGE ===== */
+.doc-num-input{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:#f8fafc;border-bottom:1px solid var(--border)
+}
+.doc-num-input label{font-size:11px;color:var(--gray);white-space:nowrap}
+.doc-num-input input{
+  width:140px;padding:4px 8px;border:1px solid var(--border);
+  border-radius:5px;font-size:12px;font-family:inherit
+}
+.doc-num-input input:focus{outline:none;border-color:var(--blue)}
+
+/* ===== DOCUMENT STYLES ===== */
+.doc{font-size:10pt;line-height:1.5;color:#000;padding:0}
+
+/* 공통 문서 */
+.doc-title{text-align:center;font-size:20pt;font-weight:900;letter-spacing:6px;margin-bottom:4px}
+.doc-copy{text-align:center;font-size:9pt;color:#666;margin-bottom:12px}
+.doc-meta-row{display:flex;justify-content:space-between;font-size:9pt;margin-bottom:12px}
+.doc-parties{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.party-box{border:1px solid #333;padding:8px 10px}
+.party-box h3{font-size:8.5pt;font-weight:700;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:5px}
+.prow{display:flex;font-size:8.5pt;margin-bottom:2px}
+.plabel{width:58px;color:#555;flex-shrink:0}
+.pval{font-weight:500;word-break:break-all}
+.doc-total{border:2px solid #000;padding:8px 14px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;background:#f8f9fa}
+.doc-total-lbl{font-size:10pt;font-weight:700}
+.doc-total-amt{font-size:13pt;font-weight:900;color:var(--blue)}
+.doc-total-sub{font-size:8.5pt;color:#555;text-align:right;margin-top:2px}
+.doc-tbl{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:8.5pt}
+.doc-tbl th{background:#1e3a8a;color:#fff;padding:5px 6px;text-align:center;border:1px solid #1e3a8a}
+.doc-tbl td{padding:4px 6px;border:1px solid #ccc;text-align:center}
+.doc-tbl td.tl{text-align:left}
+.doc-tbl td.tr{text-align:right;padding-right:6px}
+.doc-tbl tr:nth-child(even) td{background:#f7f9fc}
+.doc-tbl tfoot td{background:#e8f0fe;font-weight:700;border-top:2px solid #1e3a8a}
+.doc-cond{border:1px solid #ddd;padding:8px 12px;margin-bottom:12px;font-size:8.5pt}
+.doc-cond h3{font-size:9pt;font-weight:700;margin-bottom:5px}
+.cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}
+.crow{display:flex;gap:4px}
+.clabel{color:#555;min-width:55px;flex-shrink:0}
+.doc-sigs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.sig-box{border:1px solid #333;padding:10px 12px;text-align:center}
+.sig-box h3{font-size:9pt;font-weight:700;margin-bottom:8px;text-align:left}
+.sig-line{border-bottom:1px solid #999;margin:18px 0 5px}
+.sig-name{font-size:10pt;font-weight:700}
+
+/* 세금계산서 전용 */
+.tax-wrap{border:2px solid #000}
+.tax-title-row{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px;background:#1e3a8a;color:#fff}
+.tax-title-row h1{font-size:14pt;font-weight:900;letter-spacing:4px}
+.tax-title-row span{font-size:9pt}
+.tax-parties{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid #000}
+.tax-party{padding:0}
+.tax-party:first-child{border-right:1px solid #999}
+.tax-party-title{
+  background:#e8f0fe;text-align:center;font-size:9pt;font-weight:700;
+  padding:4px;border-bottom:1px solid #999
+}
+.tax-field-row{display:flex;border-bottom:1px solid #ddd;font-size:8.5pt}
+.tax-field-row:last-child{border-bottom:none}
+.tax-fl{
+  background:#f5f5f5;padding:3px 8px;min-width:60px;font-weight:600;
+  border-right:1px solid #ddd;display:flex;align-items:center;font-size:8pt
+}
+.tax-fv{padding:3px 8px;flex:1}
+.tax-fv2{padding:3px 8px;flex:1;border-left:1px solid #ddd}
+.tax-sum-row{
+  display:grid;grid-template-columns:auto 1fr auto 1fr;
+  border-bottom:1px solid #000;font-size:8.5pt
+}
+.tax-sl{background:#e8f0fe;padding:4px 10px;font-weight:700;border-right:1px solid #999;text-align:center}
+.tax-sv{padding:4px 10px;font-size:10pt;font-weight:700;color:var(--blue)}
+.tax-tbl{width:100%;border-collapse:collapse;font-size:8pt}
+.tax-tbl th{background:#f0f4ff;padding:4px 4px;text-align:center;border:1px solid #999;font-weight:700}
+.tax-tbl td{padding:4px 4px;border:1px solid #ccc;text-align:center}
+.tax-tbl td.tl{text-align:left;padding-left:6px}
+.tax-tbl td.tr{text-align:right;padding-right:4px}
+.tax-footer{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+  border-top:1px solid #000;font-size:8.5pt}
+.tax-fl2{background:#f0f4ff;padding:4px 6px;font-weight:700;border-right:1px solid #999;
+  text-align:center;display:flex;align-items:center;justify-content:center}
+.tax-fv3{padding:4px 6px;border-right:1px solid #ccc}
+.tax-receipt{text-align:center;padding:6px;font-size:9pt;font-weight:700;border-top:1px solid #000}
+
+/* 거래명세표 */
+.stmt-header{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:12px;align-items:start}
+.stmt-confirm{border:1px solid #333;padding:10px;text-align:center;min-width:120px}
+.stmt-confirm h3{font-size:9pt;font-weight:700;margin-bottom:6px}
+.confirm-line{border-bottom:1px solid #999;margin:16px 0 4px;font-size:8pt;color:#666}
+
+/* 계약서 */
+.contract-art{margin-bottom:10px}
+.contract-art h3{font-size:9.5pt;font-weight:700;border-bottom:1px dashed #ccc;padding-bottom:3px;margin-bottom:4px}
+.contract-art p{font-size:9pt;line-height:1.75;color:#222}
+
+/* ===== HISTORY LIST ===== */
+.history-item{
+  padding:10px 12px;border:1px solid var(--border);border-radius:6px;
+  margin-bottom:6px;cursor:pointer;transition:all .15s;display:flex;
+  align-items:center;justify-content:space-between
+}
+.history-item:hover{border-color:var(--blue);background:var(--blue-l)}
+.history-item .hi-info h4{font-size:13px;font-weight:700}
+.history-item .hi-info span{font-size:11px;color:var(--gray)}
+.history-item .hi-del{color:var(--red);background:none;border:none;cursor:pointer;font-size:16px;padding:2px 6px}
+
+/* ===== NOTICE ===== */
+.notice{padding:8px 12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;font-size:11px;color:#92400e;margin-bottom:8px}
+
+/* ===== RENTAL SECTIONS SHOW/HIDE ===== */
+.rental-only{display:none !important}
+body.rental-mode .rental-only{display:revert !important}
+body.rental-mode button.rental-only{display:inline-flex !important}
+body.rental-mode div.rental-only{display:block !important}
+body.rental-mode .normal-only{display:none !important}
+
+/* ===== RENTAL ITEMS TABLE ===== */
+.ri-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:560px}
+.ri-tbl th{background:#1e3a8a;color:#fff;padding:5px 4px;text-align:center;border:1px solid #1e3a8a}
+.ri-tbl td{border:1px solid var(--border);padding:2px 3px}
+.ri-tbl td input{border:none;background:transparent;padding:3px 4px;font-size:11px;width:100%;font-family:inherit}
+.ri-tbl td input:focus{outline:1px solid var(--blue-m);border-radius:2px}
+.ri-tbl .ri-install input{text-align:center}
+.ri-tbl .ri-num{text-align:center}
+
+/* ===== RENTAL DOCUMENT STYLES ===== */
+.rental-doc{font-size:9.5pt;line-height:1.5;color:#000}
+.rental-outer-box{border:2px solid #000;margin-bottom:0}
+.rental-title-bar{background:#1e3a8a;color:#fff;text-align:center;padding:8px;font-size:16pt;font-weight:900;letter-spacing:6px}
+.rental-notice{background:#fff3cd;border-bottom:2px solid #000;text-align:center;padding:5px;font-size:9pt;font-weight:700;color:#856404}
+.rental-section{border-bottom:1px solid #999}
+.rental-section:last-child{border-bottom:none}
+.rental-section-title{background:#e8f0fe;font-size:8.5pt;font-weight:700;padding:4px 10px;border-bottom:1px solid #999;display:flex;align-items:center;gap:6px}
+.rental-section-body{padding:8px 10px}
+.rental-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:8.5pt}
+.rental-field-row{display:flex;gap:4px;margin-bottom:3px;align-items:baseline}
+.rfl{color:#444;min-width:72px;flex-shrink:0;font-size:8pt}
+.rfv{font-weight:500;flex:1;border-bottom:1px dotted #999;min-height:14px;padding-bottom:1px}
+.rental-contract-tbl{width:100%;border-collapse:collapse;font-size:8.5pt}
+.rental-contract-tbl th{background:#1e3a8a;color:#fff;padding:5px 4px;text-align:center;border:1px solid #1e3a8a}
+.rental-contract-tbl td{padding:4px 5px;border:1px solid #ccc;text-align:center}
+.rental-contract-tbl td.rctl{text-align:left;padding-left:6px}
+.rental-term-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid #eee;font-size:8.5pt}
+.rental-term-row:last-child{border-bottom:none}
+.rental-check{color:#1e3a8a;font-size:10pt;font-weight:700;flex-shrink:0}
+.rental-confirm{font-size:8pt;color:#333;margin-left:auto;white-space:nowrap;background:#f0f4ff;padding:2px 8px;border-radius:3px}
+.rental-sig-row{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:0 16px;align-items:center;font-size:8.5pt;margin-top:4px}
+.rental-sig-label{color:#555}
+.rental-sig-line{border-bottom:1px solid #333;height:22px}
+.rental-info-box{background:#f8fafc;border:1px solid #ddd;padding:6px 10px;font-size:8pt;margin-top:8px}
+.rental-clause-art{margin-bottom:10px}
+.rental-clause-art h3{font-size:9pt;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:4px;color:#1e3a8a}
+.rental-clause-art p,.rental-clause-art ol{font-size:8.5pt;line-height:1.75;color:#222}
+.rental-clause-art ol{padding-left:16px}
+.rental-clause-art li{margin-bottom:2px}
+.page-separator{border:none;border-top:3px dashed #ccd;margin:24px 0;position:relative}
+.page-separator::after{content:'▼ 다음 페이지';position:absolute;left:50%;transform:translateX(-50%);top:-8px;background:#f1f5f9;padding:0 8px;font-size:11px;color:#94a3b8}
+
+/* ===== PRINT ===== */
+@media print{
+  body *{visibility:hidden}
+  #printMount,#printMount *{visibility:visible}
+  #printMount{position:fixed;left:0;top:0;width:210mm;padding:12mm 14mm;background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== MODALS ===== -->
+
+<!-- 내 회사 정보 설정 -->
+<div class="modal-bg" id="modalCompany">
+  <div class="modal">
+    <div class="modal-hd"><h2>⚙️ 내 회사 정보 설정</h2><button class="modal-close" onclick="closeModal('modalCompany')">✕</button></div>
+    <div class="modal-body">
+      <div class="notice">저장하면 모든 문서에 자동으로 채워집니다.</div>
+      <div class="frow c2"><div><label>회사명</label><input type="text" id="mc-name" placeholder="한별시스템"></div><div><label>사업자번호</label><input type="text" id="mc-reg" placeholder="000-00-00000"></div></div>
+      <div class="frow c2"><div><label>대표자</label><input type="text" id="mc-ceo" placeholder="대표자명"></div><div><label>업태</label><input type="text" id="mc-biz" placeholder="서비스업"></div></div>
+      <div class="frow c2"><div><label>종목</label><input type="text" id="mc-item" placeholder="IT솔루션,유지보수"></div><div><label>이메일</label><input type="text" id="mc-email" placeholder="info@hanbyeol.co.kr"></div></div>
+      <div class="frow c1"><div><label>사업장 주소</label><input type="text" id="mc-addr" placeholder="주소 입력"></div></div>
+      <div class="frow c2"><div><label>전화</label><input type="text" id="mc-tel" placeholder="02-0000-0000"></div><div><label>팩스</label><input type="text" id="mc-fax" placeholder="02-0000-0001"></div></div>
+      <div class="frow c2"><div><label>계좌은행</label><input type="text" id="mc-bank" placeholder="국민은행"></div><div><label>계좌번호</label><input type="text" id="mc-account" placeholder="000-00-0000000"></div></div>
+      <div class="frow c1"><div><label>계좌 예금주</label><input type="text" id="mc-holder" placeholder="한별시스템"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modalCompany')">취소</button>
+      <button class="btn btn-blue" onclick="saveMyCompany()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 거래처 저장 확인 -->
+<div class="modal-bg" id="modalSaveCust">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hd"><h2>💾 거래처 저장</h2><button class="modal-close" onclick="closeModal('modalSaveCust')">✕</button></div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px;font-size:13px">현재 고객 정보를 거래처 목록에 저장합니다.</p>
+      <div class="frow c1"><div><label>거래처 이름 (식별용)</label><input type="text" id="cust-save-name" placeholder="자동으로 회사명이 사용됩니다"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modalSaveCust')">취소</button>
+      <button class="btn btn-green" onclick="confirmSaveCust()">✅ 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 거래 내역 불러오기 -->
+<div class="modal-bg" id="modalHistory">
+  <div class="modal">
+    <div class="modal-hd"><h2>📂 저장된 거래 불러오기</h2><button class="modal-close" onclick="closeModal('modalHistory')">✕</button></div>
+    <div class="modal-body" id="historyList"></div>
+    <div class="modal-footer">
+      <button class="btn btn-gray" onclick="closeModal('modalHistory')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="hd-logo">📄 한별시스템</div>
+  <span class="hd-sep">|</span>
+  <span style="font-size:12px;opacity:.7">문서 발행 시스템</span>
+  <div class="hd-btns">
+    <button class="hd-btn" onclick="openModal('modalCompany')">⚙️ 내 회사 설정</button>
+    <button class="hd-btn" onclick="openHistory()">📂 거래 불러오기</button>
+    <button class="hd-btn success" onclick="saveTransaction()">💾 거래 저장</button>
+    <button class="hd-btn primary" onclick="printCurrent()">🖨️ 현재 문서</button>
+    <button class="hd-btn warning" onclick="printAll()">📤 4종 전체 출력</button>
+  </div>
+</header>
+
+<!-- ===== MAIN LAYOUT ===== -->
+<div class="layout">
+
+  <!-- ===== LEFT PANEL ===== -->
+  <div class="left-panel">
+
+    <!-- 문서 번호/날짜 -->
+    <div class="doc-num-input">
+      <label>문서번호</label>
+      <input type="text" id="docNum" placeholder="2026-001" oninput="renderAll()">
+      <label style="margin-left:8px">일자</label>
+      <input type="date" id="docDate" oninput="renderAll()" style="width:130px">
+    </div>
+
+    <!-- 거래처 섹션 -->
+    <div class="section">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>👥 거래처 정보</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="cust-select-row">
+          <select id="custSelect" onchange="loadCustomer()">
+            <option value="">— 신규 거래처 —</option>
+          </select>
+          <button class="btn btn-green btn-sm" onclick="openSaveCust()">저장</button>
+          <button class="btn btn-red btn-sm" onclick="deleteCust()">삭제</button>
+        </div>
+        <div class="frow c2">
+          <div><label>상호(회사명)</label><input type="text" id="c-name" placeholder="고객사명" oninput="renderAll()"></div>
+          <div><label>사업자번호</label><input type="text" id="c-reg" placeholder="000-00-00000" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>대표자</label><input type="text" id="c-ceo" placeholder="대표자명" oninput="renderAll()"></div>
+          <div><label>담당자</label><input type="text" id="c-person" placeholder="담당자명" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>업태</label><input type="text" id="c-biz" placeholder="제조업" oninput="renderAll()"></div>
+          <div><label>종목</label><input type="text" id="c-item" placeholder="전자부품,프린터" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c1">
+          <div><label>주소</label><input type="text" id="c-addr" placeholder="고객사 주소" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>전화</label><input type="text" id="c-tel" placeholder="전화번호" oninput="renderAll()"></div>
+          <div><label>팩스</label><input type="text" id="c-fax" placeholder="팩스번호" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c1">
+          <div><label>이메일</label><input type="text" id="c-email" placeholder="이메일" oninput="renderAll()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 품목 섹션 -->
+    <div class="section">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>📦 품목 내역</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="items-wrap">
+          <table class="items-tbl">
+            <thead><tr>
+              <th style="width:28%">품목명</th>
+              <th style="width:14%">규격</th>
+              <th style="width:8%">단위</th>
+              <th style="width:9%">수량</th>
+              <th style="width:16%">단가</th>
+              <th style="width:18%">금액</th>
+              <th style="width:7%">삭제</th>
+            </tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <button class="add-row-btn" onclick="addItem()">+ 품목 추가</button>
+        <div class="frow c2" style="margin-top:8px">
+          <div>
+            <label>부가세</label>
+            <select class="field" id="vatMode" onchange="renderAll()">
+              <option value="add">10% 별도</option>
+              <option value="inc">10% 포함</option>
+              <option value="none">면세</option>
+            </select>
+          </div>
+          <div><label>할인금액 (원)</label><input type="number" id="discount" value="0" oninput="renderAll()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 거래 조건 섹션 -->
+    <div class="section">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>📋 거래 조건</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="frow c2">
+          <div><label>유효기간</label><input type="text" id="validPeriod" placeholder="30일" oninput="renderAll()"></div>
+          <div><label>납기일</label><input type="text" id="deliveryDate" placeholder="계약 후 7일" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>납품장소</label><input type="text" id="deliveryPlace" placeholder="납품장소" oninput="renderAll()"></div>
+          <div><label>결제조건</label><input type="text" id="paymentCond" placeholder="세금계산서 후 30일" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div>
+            <label>세금계산서 유형</label>
+            <select class="field" id="taxType" onchange="renderAll()">
+              <option value="청구">청구</option>
+              <option value="영수">영수</option>
+            </select>
+          </div>
+          <div><label>납품일자</label><input type="date" id="deliveryActual" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c1">
+          <div><label>비고</label><textarea id="note" rows="2" placeholder="특이사항" oninput="renderAll()"></textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 계약 조항 섹션 -->
+    <div class="section">
+      <div class="section-hd" onclick="toggleSection(this)">
+        <span>📝 계약 조항 (계약서용)</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="frow c2">
+          <div><label>계약기간</label><input type="text" id="ctPeriod" placeholder="2026.01.01 ~ 2026.12.31" oninput="renderAll()"></div>
+          <div><label>완료기한</label><input type="text" id="ctDeadline" placeholder="계약 후 30일" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c1"><div><label>제1조 (목적)</label><textarea id="ct1" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제2조 (의무)</label><textarea id="ct2" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제3조 (비밀유지)</label><textarea id="ct3" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제4조 (계약 해지)</label><textarea id="ct4" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제5조 (분쟁 해결)</label><textarea id="ct5" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>특약사항</label><textarea id="ctSpecial" rows="2" placeholder="특약 또는 추가 조건" oninput="renderAll()"></textarea></div></div>
+      </div>
+    </div>
+
+
+    <!-- ===== 임대 신청정보 (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>📋 임대 신청정보</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="frow c2">
+          <div><label>요청자 성함</label><input type="text" id="r-person" placeholder="담당자명" oninput="renderAll()"></div>
+          <div><label>휴대폰 번호</label><input type="text" id="r-mobile" placeholder="010-0000-0000" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div>
+            <label>발행 구분</label>
+            <select class="field" id="r-billing" onchange="renderAll()">
+              <option value="전자세금계산서">전자세금계산서</option>
+              <option value="종이세금계산서">종이세금계산서</option>
+              <option value="현금영수증">현금영수증</option>
+            </select>
+          </div>
+          <div><label>계산서 이메일</label><input type="text" id="r-billEmail" placeholder="billing@email.com" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>보증금 (원)</label><input type="number" id="r-deposit" value="0" oninput="renderAll()"></div>
+          <div><label>기본 계약기간 (년)</label><input type="text" id="r-period" value="3" oninput="renderAll()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 임대 물품 (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>🖨️ 임대 물품 내역</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="items-wrap">
+          <table class="ri-tbl">
+            <thead><tr>
+              <th style="width:22%">모델명</th>
+              <th style="width:11%">기본(흑)<br>매수</th>
+              <th style="width:11%">기본(컬)<br>매수</th>
+              <th style="width:11%">추가(흑)<br>원/장</th>
+              <th style="width:11%">추가(컬)<br>원/장</th>
+              <th style="width:8%">수량<br>(대)</th>
+              <th style="width:14%">설치비</th>
+              <th style="width:16%">월렌탈료<br>(VAT별도)</th>
+              <th style="width:6%">삭제</th>
+            </tr></thead>
+            <tbody id="riBody"></tbody>
+          </table>
+        </div>
+        <button class="add-row-btn" onclick="addRentalItem()">+ 물품 추가</button>
+        <div style="margin-top:8px;padding:6px 10px;background:#e8f0fe;border-radius:5px;font-size:12px">
+          <strong>월 합계: </strong><span id="riTotal" style="color:#1e3a8a;font-weight:700">0원</span>
+          <span style="color:#555;margin-left:8px">(VAT 별도)</span>
+          <span style="margin-left:12px"><strong>VAT포함: </strong><span id="riTotalVat" style="color:#dc2626;font-weight:700">0원</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 자동이체 정보 (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd open" onclick="toggleSection(this)">
+        <span>🏦 자동이체 정보</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body open">
+        <div class="frow c2">
+          <div><label>은행명</label><input type="text" id="r-bank" placeholder="국민은행" oninput="renderAll()"></div>
+          <div><label>계좌번호</label><input type="text" id="r-account" placeholder="000-00-0000000" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>예금주</label><input type="text" id="r-holder" placeholder="예금주명" oninput="renderAll()"></div>
+          <div><label>주민번호(앞6자리)/사업자번호</label><input type="text" id="r-resid" placeholder="000000 / 000-00-00000" oninput="renderAll()"></div>
+        </div>
+        <div class="frow c2">
+          <div><label>출금일 (매월)</label><input type="text" id="r-debitDay" placeholder="예) 25일" oninput="renderAll()"></div>
+          <div><label>출금금액 (원, VAT포함)</label><input type="number" id="r-debitAmt" placeholder="자동계산" oninput="renderAll()"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 약관 편집 (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd" onclick="toggleSection(this)">
+        <span>📜 약관 · 기타 편집</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:6px">약관 / 기타 항목 내용을 직접 수정할 수 있습니다.</div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:#374151">약 관</div>
+        <div class="frow c1"><div><label>약관 ①</label><textarea id="rt1" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>약관 ②</label><textarea id="rt2" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>약관 ③</label><textarea id="rt3" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>약관 ④</label><textarea id="rt4" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>약관 ⑤</label><textarea id="rt5" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div style="font-weight:700;font-size:12px;margin:8px 0 4px;color:#374151">기 타</div>
+        <div class="frow c1"><div><label>기타 ①</label><textarea id="re1" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>기타 ②</label><textarea id="re2" rows="1" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>기타 ③</label><textarea id="re3" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>기타 ④</label><textarea id="re4" rows="2" oninput="renderAll()"></textarea></div></div>
+      </div>
+    </div>
+
+    <!-- ===== 이용약관 편집 (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd" onclick="toggleSection(this)">
+        <span>📋 서비스 이용약관 편집 (3페이지)</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="frow c1"><div><label>제1조 (계약의 목적)</label><textarea id="rc1" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제2조 (계약기간)</label><textarea id="rc2" rows="3" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제3조 (복사기 인도/철거)</label><textarea id="rc3" rows="3" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제4조 (유지보수)</label><textarea id="rc4" rows="3" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제5조 (준수사항)</label><textarea id="rc5" rows="3" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제6조 (물품의 회수 및 반환)</label><textarea id="rc6" rows="3" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제7조 (임대료)</label><textarea id="rc7" rows="4" oninput="renderAll()"></textarea></div></div>
+      </div>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- ===== RIGHT PANEL ===== -->
+  <div class="right-panel">
+    <div class="doc-tabs">
+      <button class="doc-tab active" onclick="switchTab('quote',this)">📋 견적서</button>
+      <button class="doc-tab" onclick="switchTab('statement',this)">🧾 거래명세표</button>
+      <button class="doc-tab" onclick="switchTab('tax',this)">🏦 세금계산서</button>
+      <button class="doc-tab" onclick="switchTab('contract',this)">📝 계약서</button>
+      <button class="doc-tab" onclick="switchTab('rental',this)" style="border-color:#7c3aed;color:#7c3aed">📑 임대계약서</button>
+    </div>
+
+    <div class="preview-area">
+      <div class="preview-wrap">
+        <div class="preview-bar">
+          <span id="previewLabel">📋 견적서 미리보기</span>
+          <span style="opacity:.6;font-size:11px">입력 즉시 업데이트</span>
+        </div>
+        <div style="padding:24px">
+          <div id="docPreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar" id="actionBar">
+      <!-- 일반 문서용 버튼 (normal-only) -->
+      <button class="btn btn-blue normal-only" onclick="printCurrent()">🖨️ 현재 문서 인쇄</button>
+      <div class="sep normal-only"></div>
+      <button class="btn btn-gray normal-only" onclick="switchTab('quote', document.querySelector('.doc-tab'))">견적서</button>
+      <button class="btn btn-gray normal-only" onclick="switchTabByIdx(1)">거래명세표</button>
+      <button class="btn btn-gray normal-only" onclick="switchTabByIdx(2)">세금계산서</button>
+      <button class="btn btn-gray normal-only" onclick="switchTabByIdx(3)">계약서</button>
+      <div class="sep normal-only"></div>
+      <button class="btn normal-only" style="background:#d97706;color:#fff" onclick="printAll()">📤 4종 전체 출력</button>
+      <!-- 임대계약서용 버튼 (rental-only) -->
+      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(1)">🖨️ 1장 계약서 표지</button>
+      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(2)">🖨️ 2장 자동이체신청서</button>
+      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(3)">🖨️ 3장 이용약관</button>
+      <div class="sep rental-only"></div>
+      <button class="btn rental-only" style="background:#d97706;color:#fff" onclick="printRentalAll()">📤 임대계약서 3장 전체 출력</button>
+    </div>
+  </div><!-- /right-panel -->
+
+</div><!-- /layout -->
+
+<!-- Print mount -->
+<div id="printMount" style="display:none"></div>
+
+<script>
+// =============================================
+// STORAGE KEYS
+// =============================================
+const KEY_COMPANY = 'hbs_company';
+const KEY_CUSTOMERS = 'hbs_customers';
+const KEY_TRANSACTIONS = 'hbs_transactions';
+const KEY_DOCNUM = 'hbs_docnum';
+
+// =============================================
+// STATE
+// =============================================
+let items = [];
+let currentTab = 'quote';
+let myCompany = {};
+let customers = [];
+
+// =============================================
+// UTILS
+// =============================================
+const $ = id => document.getElementById(id);
+const val = id => ($( id) ? $(id).value.trim() : '');
+const numVal = id => parseFloat($(id) ? $(id).value : 0) || 0;
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function fmt(n) { return Math.round(n).toLocaleString('ko-KR'); }
+function fmtKor(n) {
+  if (!n) return '영원정';
+  const d = ['','일','이','삼','사','오','육','칠','팔','구'];
+  const p = ['','십','백','천'];
+  const u = ['','만','억','조'];
+  let r = ''; const s = Math.round(n).toString();
+  const groups = [];
+  for (let i = s.length; i > 0; i -= 4) groups.unshift(s.slice(Math.max(0,i-4),i));
+  groups.forEach((g,gi) => {
+    let gv = '';
+    for (let i=0;i<g.length;i++){
+      const dv=parseInt(g[i]);
+      if(dv!==0) gv+=d[dv]+p[g.length-1-i];
+    }
+    if(gv) r+=gv+u[groups.length-1-gi];
+  });
+  return r+'원정';
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function dateStr(d) { return d ? d.replace(/-/g,'.') : ''; }
+function autoDocNum() {
+  const yr = new Date().getFullYear();
+  let n = parseInt(localStorage.getItem(KEY_DOCNUM)||'0') + 1;
+  localStorage.setItem(KEY_DOCNUM, n);
+  return `${yr}-${String(n).padStart(3,'0')}`;
+}
+
+// =============================================
+// MY COMPANY
+// =============================================
+function loadMyCompany() {
+  myCompany = JSON.parse(localStorage.getItem(KEY_COMPANY)||'{}');
+  const defaults = { name:'한별시스템', reg:'', ceo:'', biz:'', item:'', addr:'', tel:'', fax:'', email:'', bank:'', account:'', holder:'' };
+  myCompany = Object.assign(defaults, myCompany);
+  // 모달 필드에 채우기
+  ['name','reg','ceo','biz','item','addr','tel','fax','email','bank','account','holder'].forEach(k => {
+    const el = $('mc-'+k); if(el) el.value = myCompany[k]||'';
+  });
+}
+function saveMyCompany() {
+  myCompany = {
+    name: val('mc-name'), reg: val('mc-reg'), ceo: val('mc-ceo'),
+    biz: val('mc-biz'), item: val('mc-item'), addr: val('mc-addr'),
+    tel: val('mc-tel'), fax: val('mc-fax'), email: val('mc-email'),
+    bank: val('mc-bank'), account: val('mc-account'), holder: val('mc-holder')
+  };
+  localStorage.setItem(KEY_COMPANY, JSON.stringify(myCompany));
+  closeModal('modalCompany');
+  renderAll();
+  showToast('내 회사 정보가 저장되었습니다.');
+}
+
+// =============================================
+// CUSTOMERS
+// =============================================
+function loadCustomers() {
+  customers = JSON.parse(localStorage.getItem(KEY_CUSTOMERS)||'[]');
+  const sel = $('custSelect');
+  sel.innerHTML = '<option value="">— 신규 거래처 —</option>';
+  customers.forEach((c,i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = c.displayName || c.name;
+    sel.appendChild(opt);
+  });
+}
+function loadCustomer() {
+  const idx = $('custSelect').value;
+  if (idx === '') { clearCustomerFields(); renderAll(); return; }
+  const c = customers[parseInt(idx)];
+  if (!c) return;
+  $('c-name').value = c.name||'';
+  $('c-reg').value = c.reg||'';
+  $('c-ceo').value = c.ceo||'';
+  $('c-person').value = c.person||'';
+  $('c-biz').value = c.biz||'';
+  $('c-item').value = c.item||'';
+  $('c-addr').value = c.addr||'';
+  $('c-tel').value = c.tel||'';
+  $('c-fax').value = c.fax||'';
+  $('c-email').value = c.email||'';
+  renderAll();
+}
+function clearCustomerFields() {
+  ['c-name','c-reg','c-ceo','c-person','c-biz','c-item','c-addr','c-tel','c-fax','c-email'].forEach(id => { if($(id)) $(id).value=''; });
+}
+function openSaveCust() {
+  $('cust-save-name').value = val('c-name');
+  openModal('modalSaveCust');
+}
+function confirmSaveCust() {
+  const custObj = {
+    displayName: val('cust-save-name') || val('c-name'),
+    name: val('c-name'), reg: val('c-reg'), ceo: val('c-ceo'),
+    person: val('c-person'), biz: val('c-biz'), item: val('c-item'),
+    addr: val('c-addr'), tel: val('c-tel'), fax: val('c-fax'), email: val('c-email')
+  };
+  const idx = $('custSelect').value;
+  if (idx !== '') {
+    customers[parseInt(idx)] = custObj;
+  } else {
+    customers.push(custObj);
+  }
+  localStorage.setItem(KEY_CUSTOMERS, JSON.stringify(customers));
+  loadCustomers();
+  // 방금 저장한 거래처 선택
+  $('custSelect').value = customers.length - 1;
+  if (idx !== '') $('custSelect').value = idx;
+  closeModal('modalSaveCust');
+  showToast('거래처가 저장되었습니다.');
+}
+function deleteCust() {
+  const idx = $('custSelect').value;
+  if (idx === '') { showToast('삭제할 거래처를 선택하세요.'); return; }
+  if (!confirm('이 거래처를 삭제하시겠습니까?')) return;
+  customers.splice(parseInt(idx), 1);
+  localStorage.setItem(KEY_CUSTOMERS, JSON.stringify(customers));
+  loadCustomers();
+  clearCustomerFields();
+  renderAll();
+  showToast('삭제되었습니다.');
+}
+
+// =============================================
+// ITEMS
+// =============================================
+function addItem() {
+  items.push({ name:'', spec:'', unit:'개', qty:1, price:0 });
+  renderItemRows();
+  renderAll();
+}
+function removeItem(i) {
+  items.splice(i,1);
+  renderItemRows();
+  renderAll();
+}
+function renderItemRows() {
+  $('itemsBody').innerHTML = items.map((it,i) => `
+    <tr>
+      <td><input type="text" value="${esc(it.name)}" placeholder="품목명" oninput="items[${i}].name=this.value;renderAll()"></td>
+      <td><input type="text" value="${esc(it.spec)}" placeholder="규격" oninput="items[${i}].spec=this.value;renderAll()"></td>
+      <td><input type="text" value="${esc(it.unit)}" placeholder="개" oninput="items[${i}].unit=this.value;renderAll()"></td>
+      <td><input type="number" value="${it.qty}" min="1" style="text-align:center" oninput="items[${i}].qty=parseFloat(this.value)||1;renderAll()"></td>
+      <td><input type="number" value="${it.price}" min="0" oninput="items[${i}].price=parseFloat(this.value)||0;renderAll()"></td>
+      <td class="amt">${fmt(it.qty*it.price)}</td>
+      <td style="text-align:center"><button class="del-btn" onclick="removeItem(${i})">✕</button></td>
+    </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;padding:12px;color:#999">품목을 추가하세요</td></tr>`;
+}
+
+// =============================================
+// CALC
+// =============================================
+function calc() {
+  const sub = items.reduce((s,it) => s + it.qty*it.price, 0);
+  const disc = numVal('discount');
+  const supply = sub - disc;
+  const vatMode = val('vatMode');
+  let supplyAmt, vatAmt, totalAmt;
+  if (vatMode === 'add') {
+    supplyAmt = supply; vatAmt = Math.round(supply*0.1); totalAmt = supply+vatAmt;
+  } else if (vatMode === 'inc') {
+    totalAmt = supply; supplyAmt = Math.round(supply/1.1); vatAmt = totalAmt - supplyAmt;
+  } else {
+    supplyAmt = supply; vatAmt = 0; totalAmt = supply;
+  }
+  return { sub, disc, supply, supplyAmt, vatAmt, totalAmt, vatMode };
+}
+
+// =============================================
+// DOC DATA HELPERS
+// =============================================
+function getMe() { return myCompany; }
+function getCust() {
+  return {
+    name: val('c-name'), reg: val('c-reg'), ceo: val('c-ceo'),
+    person: val('c-person'), biz: val('c-biz'), item: val('c-item'),
+    addr: val('c-addr'), tel: val('c-tel'), fax: val('c-fax'), email: val('c-email')
+  };
+}
+function getDocNum() { return val('docNum') || '2026-001'; }
+function getDocDate() { return val('docDate') || today(); }
+
+// =============================================
+// RENDER FUNCTIONS
+// =============================================
+function renderPartyBox(label, p, showContact) {
+  return `<div class="party-box">
+    <h3>▶ ${esc(label)}</h3>
+    <div class="prow"><span class="plabel">상  호:</span><span class="pval">${esc(p.name)||'-'}</span></div>
+    <div class="prow"><span class="plabel">사업자번호:</span><span class="pval">${esc(p.reg)||'-'}</span></div>
+    <div class="prow"><span class="plabel">대 표 자:</span><span class="pval">${esc(p.ceo)||'-'}</span></div>
+    ${showContact?`<div class="prow"><span class="plabel">담 당 자:</span><span class="pval">${esc(p.person||'')||'-'}</span></div>`:''}
+    ${showContact&&p.item?`<div class="prow"><span class="plabel">종  목:</span><span class="pval">${esc(p.item)}</span></div>`:''}
+    <div class="prow"><span class="plabel">주  소:</span><span class="pval">${esc(p.addr)||'-'}</span></div>
+    <div class="prow"><span class="plabel">전  화:</span><span class="pval">${esc(p.tel)||'-'}</span></div>
+    <div class="prow"><span class="plabel">팩  스:</span><span class="pval">${esc(p.fax)||'-'}</span></div>
+    ${p.email?`<div class="prow"><span class="plabel">이메일:</span><span class="pval">${esc(p.email)}</span></div>`:''}
+  </div>`;
+}
+
+function renderItemTableRows(showVat) {
+  if (!items.length) return `<tr><td colspan="${showVat?8:6}" style="text-align:center;padding:14px;color:#999">품목 없음</td></tr>`;
+  return items.map((it,i) => {
+    const amt = it.qty*it.price;
+    const vat = Math.round(amt*0.1);
+    return `<tr>
+      <td>${i+1}</td>
+      <td class="tl">${esc(it.name)||'-'}</td>
+      <td>${esc(it.spec)||'-'}</td>
+      <td>${esc(it.unit)||'개'}</td>
+      <td>${it.qty}</td>
+      <td class="tr">${fmt(it.price)}</td>
+      <td class="tr">${fmt(amt)}</td>
+      ${showVat?`<td class="tr">${fmt(vat)}</td>`:''}
+    </tr>`;
+  }).join('');
+}
+
+// --- 견적서 ---
+function renderQuote() {
+  const me = getMe(), cu = getCust(), c = calc();
+  const numStr = 'Q-' + getDocNum();
+  const vatLabel = c.vatMode==='none'?'(면세)':c.vatMode==='add'?`(공급가 ${fmt(c.supplyAmt)}원 + 부가세 ${fmt(c.vatAmt)}원)`:`(부가세 ${fmt(c.vatAmt)}원 포함)`;
+
+  return `<div class="doc">
+    <div class="doc-title">견 &nbsp; 적 &nbsp; 서</div>
+    <div class="doc-copy">아래와 같이 견적합니다.</div>
+    <div class="doc-meta-row">
+      <span><strong>견적번호:</strong> ${esc(numStr)}</span>
+      <span><strong>견적일자:</strong> ${dateStr(getDocDate())}</span>
+    </div>
+    <div class="doc-total">
+      <div><div class="doc-total-lbl">합 계 금 액</div><div style="font-size:8.5pt;color:#555;margin-top:2px">${fmtKor(c.totalAmt)}</div></div>
+      <div style="text-align:right"><div class="doc-total-amt">₩ ${fmt(c.totalAmt)}</div><div class="doc-total-sub">${vatLabel}</div></div>
+    </div>
+    <div class="doc-parties">
+      ${renderPartyBox('공급자 (을)', me, false)}
+      ${renderPartyBox('수신처 (갑)', cu, true)}
+    </div>
+    <table class="doc-tbl">
+      <thead><tr><th>No</th><th>품목명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th>${c.vatMode!=='none'?'<th>세액</th>':''}</tr></thead>
+      <tbody>${renderItemTableRows(c.vatMode!=='none')}</tbody>
+      <tfoot><tr>
+        <td colspan="6" style="text-align:right">합  계</td>
+        <td class="tr">${fmt(c.supplyAmt)}</td>
+        ${c.vatMode!=='none'?`<td class="tr">${fmt(c.vatAmt)}</td>`:''}
+      </tr></tfoot>
+    </table>
+    <div class="doc-cond">
+      <h3>■ 거래 조건</h3>
+      <div class="cond-grid">
+        <div class="crow"><span class="clabel">유효기간:</span><span>${esc(val('validPeriod'))||'견적일로부터 30일'}</span></div>
+        <div class="crow"><span class="clabel">납기일:</span><span>${esc(val('deliveryDate'))||'협의'}</span></div>
+        <div class="crow"><span class="clabel">납품장소:</span><span>${esc(val('deliveryPlace'))||'-'}</span></div>
+        <div class="crow"><span class="clabel">결제조건:</span><span>${esc(val('paymentCond'))||'-'}</span></div>
+      </div>
+      ${val('note')?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid #eee"><strong>비고:</strong> ${esc(val('note')).replace(/\n/g,'<br>')}</div>`:''}
+    </div>
+    ${me.bank?`<div style="font-size:8.5pt;border:1px solid #ddd;padding:6px 12px;margin-bottom:12px;background:#f8f9fa">
+      <strong>입금계좌:</strong> ${esc(me.bank)} ${esc(me.account)} (예금주: ${esc(me.holder||me.name)})
+    </div>`:''}
+    <div class="doc-sigs">
+      <div class="sig-box"><h3>갑 (발주처)</h3><div class="sig-line"></div><div class="sig-name">${esc(cu.name)||'________________'}</div><div style="font-size:8.5pt;color:#666;margin-top:3px">대표자: ${esc(cu.ceo)||'____________'} (인)</div></div>
+      <div class="sig-box"><h3>을 (공급자)</h3><div class="sig-line"></div><div class="sig-name">${esc(me.name)||'한별시스템'}</div><div style="font-size:8.5pt;color:#666;margin-top:3px">대표자: ${esc(me.ceo)||'____________'} (인)</div></div>
+    </div>
+  </div>`;
+}
+
+// --- 거래명세표 ---
+function renderStatement() {
+  const me = getMe(), cu = getCust(), c = calc();
+  const numStr = 'M-' + getDocNum();
+  const delDate = val('deliveryActual') || getDocDate();
+
+  return `<div class="doc">
+    <div class="doc-title">거 래 명 세 표</div>
+    <div class="doc-copy">공급받는자 보관용</div>
+    <div class="doc-meta-row">
+      <span><strong>명세번호:</strong> ${esc(numStr)}</span>
+      <span><strong>거래일자:</strong> ${dateStr(getDocDate())}</span>
+      <span><strong>납품일자:</strong> ${dateStr(delDate)}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:12px;align-items:start">
+      <div class="doc-parties" style="margin-bottom:0">
+        ${renderPartyBox('공급자', me, false)}
+        ${renderPartyBox('공급받는자', cu, true)}
+      </div>
+      <div class="sig-box" style="min-width:110px;margin-top:0">
+        <h3 style="text-align:center">납품 확인</h3>
+        <div style="font-size:8pt;color:#666;text-align:center;margin-bottom:4px">납품일: ${dateStr(delDate)}</div>
+        <div style="border-bottom:1px solid #999;margin:20px 0 4px"></div>
+        <div style="font-size:8pt;color:#666;text-align:center">(인)</div>
+      </div>
+    </div>
+    <table class="doc-tbl">
+      <thead><tr><th>No</th><th>품목명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>금액</th><th>세액</th></tr></thead>
+      <tbody>${renderItemTableRows(true)}</tbody>
+      <tfoot><tr>
+        <td colspan="6" style="text-align:right">합  계</td>
+        <td class="tr">${fmt(c.supplyAmt)}</td>
+        <td class="tr">${fmt(c.vatAmt)}</td>
+      </tr></tfoot>
+    </table>
+    <div class="doc-total" style="margin-bottom:12px">
+      <div><div class="doc-total-lbl">공급가액</div></div>
+      <div style="text-align:center"><span style="font-size:9pt">₩ ${fmt(c.supplyAmt)}</span></div>
+      <div><div class="doc-total-lbl">세액</div></div>
+      <div style="text-align:center"><span style="font-size:9pt">₩ ${fmt(c.vatAmt)}</span></div>
+      <div><div class="doc-total-lbl">합계금액</div></div>
+      <div style="text-align:right"><div class="doc-total-amt">₩ ${fmt(c.totalAmt)}</div></div>
+    </div>
+    <div style="text-align:center;font-size:10pt;font-weight:700;padding:8px;border:1px solid #333;background:#f8f9fa">
+      위 금액을 정히 ${val('taxType')==='영수'?'영수':'청구'}합니다.
+    </div>
+    ${val('note')?`<div style="font-size:8.5pt;margin-top:8px;padding:6px 10px;background:#f8f9fa;border:1px solid #ddd"><strong>비고:</strong> ${esc(val('note'))}</div>`:''}
+    ${me.bank?`<div style="font-size:8.5pt;border:1px solid #ddd;padding:6px 12px;margin-top:8px;background:#f8f9fa">
+      <strong>입금계좌:</strong> ${esc(me.bank)} ${esc(me.account)} (예금주: ${esc(me.holder||me.name)})
+    </div>`:''}
+  </div>`;
+}
+
+// --- 세금계산서 ---
+function renderTax() {
+  const me = getMe(), cu = getCust(), c = calc();
+  const numStr = 'T-' + getDocNum();
+  const d = getDocDate().split('-');
+  const yr = d[0]||'', mo = d[1]||'', dy = d[2]||'';
+  const taxTypeStr = val('taxType')||'청구';
+
+  const taxItemRows = items.length ? items.map((it,i) => {
+    const amt = it.qty*it.price;
+    const vat = Math.round(amt*0.1);
+    return `<tr>
+      <td>${mo}</td><td>${dy}</td>
+      <td class="tl">${esc(it.name)||'-'}</td>
+      <td>${esc(it.spec)||'-'}</td>
+      <td>${it.qty}${esc(it.unit)}</td>
+      <td class="tr">${fmt(it.price)}</td>
+      <td class="tr">${fmt(amt)}</td>
+      <td class="tr">${fmt(vat)}</td>
+      <td>${esc(val('note'))||''}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9" style="text-align:center;padding:12px;color:#999">품목 없음</td></tr>`;
+
+  // 빈 행 채우기 (최소 4줄)
+  const emptyRows = Math.max(0, 4 - items.length);
+  const emptyHtml = Array(emptyRows).fill(`<tr>${Array(9).fill('<td>&nbsp;</td>').join('')}</tr>`).join('');
+
+  return `<div class="doc">
+    <div class="tax-wrap">
+      <div class="tax-title-row">
+        <h1>세 금 계 산 서</h1>
+        <span>승인번호: ${esc(numStr)} &nbsp;|&nbsp; (${taxTypeStr})</span>
+      </div>
+
+      <div class="tax-parties">
+        <div class="tax-party">
+          <div class="tax-party-title">공 급 자</div>
+          <div class="tax-field-row"><div class="tax-fl">등록번호</div><div class="tax-fv" style="font-size:10pt;font-weight:700">${esc(me.reg)||'&nbsp;'}</div></div>
+          <div class="tax-field-row">
+            <div class="tax-fl">상  호</div><div class="tax-fv">${esc(me.name)||'&nbsp;'}</div>
+            <div class="tax-fl" style="border-left:1px solid #ddd">성  명</div><div class="tax-fv2">${esc(me.ceo)||'&nbsp;'} (인)</div>
+          </div>
+          <div class="tax-field-row"><div class="tax-fl">사업장주소</div><div class="tax-fv">${esc(me.addr)||'&nbsp;'}</div></div>
+          <div class="tax-field-row">
+            <div class="tax-fl">업  태</div><div class="tax-fv">${esc(me.biz)||'&nbsp;'}</div>
+            <div class="tax-fl" style="border-left:1px solid #ddd">종  목</div><div class="tax-fv2">${esc(me.item)||'&nbsp;'}</div>
+          </div>
+          <div class="tax-field-row"><div class="tax-fl">이메일</div><div class="tax-fv">${esc(me.email)||'&nbsp;'}</div></div>
+        </div>
+        <div class="tax-party" style="border-left:2px solid #000">
+          <div class="tax-party-title">공 급 받 는 자</div>
+          <div class="tax-field-row"><div class="tax-fl">등록번호</div><div class="tax-fv" style="font-size:10pt;font-weight:700">${esc(cu.reg)||'&nbsp;'}</div></div>
+          <div class="tax-field-row">
+            <div class="tax-fl">상  호</div><div class="tax-fv">${esc(cu.name)||'&nbsp;'}</div>
+            <div class="tax-fl" style="border-left:1px solid #ddd">성  명</div><div class="tax-fv2">${esc(cu.ceo||cu.person)||'&nbsp;'} (인)</div>
+          </div>
+          <div class="tax-field-row"><div class="tax-fl">사업장주소</div><div class="tax-fv">${esc(cu.addr)||'&nbsp;'}</div></div>
+          <div class="tax-field-row">
+            <div class="tax-fl">업  태</div><div class="tax-fv">${esc(cu.biz)||'&nbsp;'}</div>
+            <div class="tax-fl" style="border-left:1px solid #ddd">종  목</div><div class="tax-fv2">&nbsp;</div>
+          </div>
+          <div class="tax-field-row"><div class="tax-fl">이메일</div><div class="tax-fv">${esc(cu.email)||'&nbsp;'}</div></div>
+        </div>
+      </div>
+
+      <div class="tax-sum-row">
+        <div class="tax-sl">작성일자</div>
+        <div class="tax-sv" style="font-size:9pt;color:#000">${yr}년 ${mo}월 ${dy}일</div>
+        <div class="tax-sl">공급가액</div>
+        <div class="tax-sv">₩ ${fmt(c.supplyAmt)}</div>
+        <div class="tax-sl">세  액</div>
+        <div class="tax-sv">₩ ${fmt(c.vatAmt)}</div>
+      </div>
+
+      <table class="tax-tbl">
+        <thead><tr>
+          <th style="width:4%">월</th><th style="width:4%">일</th>
+          <th style="width:22%">품  목</th><th style="width:12%">규  격</th>
+          <th style="width:8%">수  량</th><th style="width:14%">단  가</th>
+          <th style="width:16%">공급가액</th><th style="width:12%">세  액</th>
+          <th style="width:8%">비  고</th>
+        </tr></thead>
+        <tbody>${taxItemRows}${emptyHtml}</tbody>
+        <tfoot><tr>
+          <td colspan="6" style="text-align:right;font-weight:700;padding-right:8px">합  계</td>
+          <td class="tr" style="font-weight:700">₩${fmt(c.supplyAmt)}</td>
+          <td class="tr" style="font-weight:700">₩${fmt(c.vatAmt)}</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+
+      <div class="tax-footer">
+        <div class="tax-fl2">합계금액</div>
+        <div class="tax-fv3" style="font-size:10pt;font-weight:700;color:#1a56db;padding:4px 8px">₩ ${fmt(c.totalAmt)}</div>
+        <div class="tax-fl2">현  금</div><div class="tax-fv3">&nbsp;</div>
+        <div class="tax-fl2">수  표</div><div class="tax-fv3">&nbsp;</div>
+        <div class="tax-fl2">어  음</div><div class="tax-fv3">&nbsp;</div>
+        <div class="tax-fl2">외상미수금</div><div style="padding:4px 6px">&nbsp;</div>
+      </div>
+      <div class="tax-receipt">이 금액을 <strong>${taxTypeStr}</strong>합니다.</div>
+    </div>
+    ${me.bank?`<div style="font-size:8.5pt;border:1px solid #ddd;padding:6px 12px;margin-top:8px;background:#f8f9fa">
+      <strong>입금계좌:</strong> ${esc(me.bank)} ${esc(me.account)} (예금주: ${esc(me.holder||me.name)})
+    </div>`:''}
+  </div>`;
+}
+
+// --- 계약서 ---
+function renderContract() {
+  const me = getMe(), cu = getCust(), c = calc();
+  const numStr = 'C-' + getDocNum();
+  const vat = Math.round(c.supplyAmt*0.1);
+  const total = c.supplyAmt + vat;
+
+  const arts = [
+    ['ct1','제1조 (목적)'],['ct2','제2조 (의무)'],['ct3','제3조 (비밀유지)'],
+    ['ct4','제4조 (계약 해지)'],['ct5','제5조 (분쟁 해결)']
+  ].filter(([id]) => val(id)).map(([id,title]) =>
+    `<div class="contract-art"><h3>${title}</h3><p>${esc(val(id)).replace(/\n/g,'<br>')}</p></div>`
+  ).join('');
+
+  const special = val('ctSpecial') ? `<div class="contract-art"><h3>특약사항</h3><p>${esc(val('ctSpecial')).replace(/\n/g,'<br>')}</p></div>` : '';
+
+  return `<div class="doc">
+    <div class="doc-title">계 &nbsp; 약 &nbsp; 서</div>
+    <div class="doc-meta-row">
+      <span><strong>계약번호:</strong> ${esc(numStr)}</span>
+      <span><strong>계약일자:</strong> ${dateStr(getDocDate())}</span>
+    </div>
+    <div class="doc-parties">
+      ${renderPartyBox('갑 (발주처)', cu, true)}
+      ${renderPartyBox('을 (수주처)', me, false)}
+    </div>
+    <div class="doc-cond" style="margin-bottom:12px">
+      <h3>■ 계약 개요</h3>
+      <div class="cond-grid">
+        <div class="crow"><span class="clabel">계약기간:</span><span>${esc(val('ctPeriod'))||'-'}</span></div>
+        <div class="crow"><span class="clabel">완료기한:</span><span>${esc(val('ctDeadline'))||'-'}</span></div>
+        <div class="crow"><span class="clabel">결제조건:</span><span>${esc(val('paymentCond'))||'-'}</span></div>
+        <div class="crow"><span class="clabel">납품장소:</span><span>${esc(val('deliveryPlace'))||'-'}</span></div>
+      </div>
+    </div>
+    <div class="doc-total">
+      <div><div class="doc-total-lbl">계약금액 (VAT 별도)</div><div style="font-size:8pt;color:#555">${fmtKor(c.supplyAmt)}</div></div>
+      <div style="text-align:right">
+        <div class="doc-total-amt">₩ ${fmt(c.supplyAmt)}</div>
+        <div class="doc-total-sub">부가세 ${fmt(c.vatAmt)}원 / 총액 ₩${fmt(c.totalAmt)}</div>
+      </div>
+    </div>
+    <table class="doc-tbl">
+      <thead><tr><th>No</th><th>품목명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th></tr></thead>
+      <tbody>${renderItemTableRows(true)}</tbody>
+      <tfoot><tr><td colspan="6" style="text-align:right">합계</td><td class="tr">${fmt(c.supplyAmt)}</td><td class="tr">${fmt(c.vatAmt)}</td></tr></tfoot>
+    </table>
+    ${arts}
+    ${special}
+    <p style="text-align:center;font-size:9pt;margin:16px 0 8px">위와 같이 계약을 체결하고 각자 서명 날인하여 각 1부씩 보관한다.</p>
+    <p style="text-align:center;font-size:10pt;font-weight:700;margin-bottom:14px">${dateStr(getDocDate())}</p>
+    <div class="doc-sigs">
+      <div class="sig-box">
+        <h3>갑 (발주처)</h3>
+        <div style="font-size:8.5pt;text-align:left;margin-bottom:4px">
+          <div>상호: ${esc(cu.name)||'________________'}</div>
+          <div>주소: ${esc(cu.addr)||'________________'}</div>
+        </div>
+        <div class="sig-line"></div>
+        <div class="sig-name">대표자: ${esc(cu.ceo)||'____________'} (인)</div>
+      </div>
+      <div class="sig-box">
+        <h3>을 (수주처)</h3>
+        <div style="font-size:8.5pt;text-align:left;margin-bottom:4px">
+          <div>상호: ${esc(me.name)||'한별시스템'}</div>
+          <div>주소: ${esc(me.addr)||'________________'}</div>
+        </div>
+        <div class="sig-line"></div>
+        <div class="sig-name">대표자: ${esc(me.ceo)||'____________'} (인)</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// =============================================
+// TAB SWITCHING & RENDER
+// =============================================
+const tabLabels = {
+  quote:'📋 견적서', statement:'🧾 거래명세표', tax:'🏦 세금계산서', contract:'📝 계약서', rental:'📑 임대계약서'
+};
+function switchTab(type, el) {
+  currentTab = type;
+  document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  $('previewLabel').textContent = tabLabels[type] + ' 미리보기';
+  // 임대계약서 모드 토글
+  if (type === 'rental') {
+    document.body.classList.add('rental-mode');
+  } else {
+    document.body.classList.remove('rental-mode');
+  }
+  renderCurrent();
+}
+function switchTabByIdx(idx) {
+  const tabs = document.querySelectorAll('.doc-tab');
+  const types = ['quote','statement','tax','contract','rental'];
+  switchTab(types[idx], tabs[idx]);
+}
+function renderCurrent() {
+  const fns = { quote: renderQuote, statement: renderStatement, tax: renderTax, contract: renderContract, rental: renderRentalAll };
+  $('docPreview').innerHTML = (fns[currentTab]||renderQuote)();
+}
+function renderAll() {
+  renderCurrent();
+  if (currentTab === 'rental') updateRentalTotals();
+}
+
+// =============================================
+// PRINT
+// =============================================
+function getDocCSS() {
+  return `
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;color:#000;font-size:10pt}
+    .doc{font-size:10pt;line-height:1.5;color:#000}
+    .doc-title{text-align:center;font-size:20pt;font-weight:900;letter-spacing:6px;margin-bottom:4px}
+    .doc-copy{text-align:center;font-size:9pt;color:#666;margin-bottom:12px}
+    .doc-meta-row{display:flex;justify-content:space-between;font-size:9pt;margin-bottom:12px}
+    .doc-parties{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .party-box{border:1px solid #333;padding:8px 10px}
+    .party-box h3{font-size:8.5pt;font-weight:700;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:5px}
+    .prow{display:flex;font-size:8.5pt;margin-bottom:2px}
+    .plabel{width:58px;color:#555;flex-shrink:0}
+    .pval{font-weight:500;word-break:break-all}
+    .doc-total{border:2px solid #000;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;background:#f8f9fa}
+    .doc-total-lbl{font-size:10pt;font-weight:700}
+    .doc-total-amt{font-size:13pt;font-weight:900;color:#1a56db}
+    .doc-total-sub{font-size:8.5pt;color:#555;text-align:right;margin-top:2px}
+    .doc-tbl{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:8.5pt}
+    .doc-tbl th{background:#1e3a8a;color:#fff;padding:5px 6px;text-align:center;border:1px solid #1e3a8a}
+    .doc-tbl td{padding:4px 6px;border:1px solid #ccc;text-align:center}
+    .doc-tbl td.tl{text-align:left}
+    .doc-tbl td.tr{text-align:right;padding-right:6px}
+    .doc-tbl tr:nth-child(even) td{background:#f7f9fc}
+    .doc-tbl tfoot td{background:#e8f0fe;font-weight:700;border-top:2px solid #1e3a8a}
+    .doc-cond{border:1px solid #ddd;padding:8px 12px;margin-bottom:12px;font-size:8.5pt}
+    .doc-cond h3{font-size:9pt;font-weight:700;margin-bottom:5px}
+    .cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px}
+    .crow{display:flex;gap:4px}
+    .clabel{color:#555;min-width:55px;flex-shrink:0}
+    .doc-sigs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+    .sig-box{border:1px solid #333;padding:10px 12px;text-align:center}
+    .sig-box h3{font-size:9pt;font-weight:700;margin-bottom:8px;text-align:left}
+    .sig-line{border-bottom:1px solid #999;margin:18px 0 5px}
+    .sig-name{font-size:10pt;font-weight:700}
+    .tax-wrap{border:2px solid #000}
+    .tax-title-row{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#1e3a8a;color:#fff}
+    .tax-title-row h1{font-size:14pt;font-weight:900;letter-spacing:4px}
+    .tax-title-row span{font-size:9pt}
+    .tax-parties{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid #000}
+    .tax-party{padding:0}
+    .tax-party:first-child{border-right:1px solid #999}
+    .tax-party-title{background:#e8f0fe;text-align:center;font-size:9pt;font-weight:700;padding:4px;border-bottom:1px solid #999}
+    .tax-field-row{display:flex;border-bottom:1px solid #ddd;font-size:8.5pt}
+    .tax-field-row:last-child{border-bottom:none}
+    .tax-fl{background:#f5f5f5;padding:3px 8px;min-width:60px;font-weight:600;border-right:1px solid #ddd;display:flex;align-items:center;font-size:8pt}
+    .tax-fv{padding:3px 8px;flex:1}
+    .tax-fv2{padding:3px 8px;flex:1;border-left:1px solid #ddd}
+    .tax-sum-row{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr;border-bottom:1px solid #000;font-size:8.5pt}
+    .tax-sl{background:#e8f0fe;padding:4px 10px;font-weight:700;border-right:1px solid #999;text-align:center}
+    .tax-sv{padding:4px 10px;font-size:10pt;font-weight:700;color:#1a56db}
+    .tax-tbl{width:100%;border-collapse:collapse;font-size:8pt}
+    .tax-tbl th{background:#f0f4ff;padding:4px;text-align:center;border:1px solid #999;font-weight:700}
+    .tax-tbl td{padding:4px;border:1px solid #ccc;text-align:center}
+    .tax-tbl td.tl{text-align:left;padding-left:6px}
+    .tax-tbl td.tr{text-align:right;padding-right:4px}
+    .tax-footer{display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr;border-top:1px solid #000;font-size:8.5pt}
+    .tax-fl2{background:#f0f4ff;padding:4px 6px;font-weight:700;border-right:1px solid #999;text-align:center;display:flex;align-items:center;justify-content:center}
+    .tax-fv3{padding:4px 6px;border-right:1px solid #ccc}
+    .tax-receipt{text-align:center;padding:6px;font-size:9pt;font-weight:700;border-top:1px solid #000}
+    .contract-art{margin-bottom:10px}
+    .contract-art h3{font-size:9.5pt;font-weight:700;border-bottom:1px dashed #ccc;padding-bottom:3px;margin-bottom:4px}
+    .contract-art p{font-size:9pt;line-height:1.75;color:#222}
+    @media print{@page{size:A4 portrait;margin:12mm 14mm}}
+    .page-break{page-break-after:always}
+  `;
+}
+function printCurrent() {
+  const fns = { quote:renderQuote, statement:renderStatement, tax:renderTax, contract:renderContract };
+  const html = (fns[currentTab]||renderQuote)();
+  openPrintWindow(html, tabLabels[currentTab]);
+}
+function printAll() {
+  const parts = [renderQuote(), renderStatement(), renderTax(), renderContract()];
+  const combined = parts.map((h,i) =>
+    `<div class="${i<parts.length-1?'page-break':''}">${h}</div>`
+  ).join('');
+  openPrintWindow(combined, '한별시스템 문서 4종');
+}
+function openPrintWindow(bodyHtml, title) {
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head>
+    <meta charset="UTF-8"><title>${title}</title>
+    <style>${getDocCSS()}</style>
+    </head><body style="padding:0;margin:0">
+    <div style="padding:12mm 14mm">${bodyHtml}</div>
+    <script>window.onload=()=>{window.print()}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+// =============================================
+// RENTAL CONTRACT
+// =============================================
+let rentalItems = [];
+
+function addRentalItem() {
+  rentalItems.push({ name:'', bcount:500, ccount:200, bprice:10, cprice:100, qty:1, install:'무료', monthly:0 });
+  renderRentalItemRows();
+  updateRentalTotals();
+  renderAll();
+}
+function removeRentalItem(i) {
+  rentalItems.splice(i,1);
+  renderRentalItemRows();
+  updateRentalTotals();
+  renderAll();
+}
+function renderRentalItemRows() {
+  $('riBody').innerHTML = rentalItems.map((it,i) => `
+    <tr>
+      <td><input type="text" value="${esc(it.name)}" placeholder="모델명" oninput="rentalItems[${i}].name=this.value;renderAll()"></td>
+      <td><input type="number" value="${it.bcount}" style="text-align:center" oninput="rentalItems[${i}].bcount=+this.value;renderAll()"></td>
+      <td><input type="number" value="${it.ccount}" style="text-align:center" oninput="rentalItems[${i}].ccount=+this.value;renderAll()"></td>
+      <td><input type="number" value="${it.bprice}" style="text-align:right" oninput="rentalItems[${i}].bprice=+this.value;renderAll()"></td>
+      <td><input type="number" value="${it.cprice}" style="text-align:right" oninput="rentalItems[${i}].cprice=+this.value;renderAll()"></td>
+      <td class="ri-num"><input type="number" value="${it.qty}" min="1" style="text-align:center" oninput="rentalItems[${i}].qty=+this.value||1;renderAll()"></td>
+      <td class="ri-install"><input type="text" value="${esc(it.install)}" placeholder="무료" oninput="rentalItems[${i}].install=this.value;renderAll()"></td>
+      <td><input type="number" value="${it.monthly}" style="text-align:right" oninput="rentalItems[${i}].monthly=+this.value;renderAll()"></td>
+      <td style="text-align:center"><button class="del-btn" onclick="removeRentalItem(${i})">✕</button></td>
+    </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;padding:10px;color:#999">물품을 추가하세요</td></tr>`;
+}
+function calcRentalTotal() {
+  const tot = rentalItems.reduce((s,it) => s + (it.monthly * it.qty), 0);
+  return { supply: tot, vat: Math.round(tot*0.1), total: tot + Math.round(tot*0.1) };
+}
+function updateRentalTotals() {
+  const c = calcRentalTotal();
+  if($('riTotal')) $('riTotal').textContent = fmt(c.supply) + '원';
+  if($('riTotalVat')) $('riTotalVat').textContent = fmt(c.total) + '원';
+  // 자동이체 금액 자동채우기 (직접 입력 없을 때)
+  const debitEl = $('r-debitAmt');
+  if (debitEl && !debitEl._userEdited) debitEl.placeholder = fmt(c.total) + '원 (자동)';
+}
+
+// ── 렌탈 문서 공통 CSS ──
+function getRentalDocCSS() {
+  return `
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Malgun Gothic','맑은 고딕',sans-serif;color:#000;font-size:9.5pt}
+    .rental-doc{font-size:9.5pt;line-height:1.5;color:#000}
+    .rental-outer-box{border:2px solid #000}
+    .rental-title-bar{background:#1e3a8a;color:#fff;text-align:center;padding:8px;font-size:16pt;font-weight:900;letter-spacing:6px}
+    .rental-notice{background:#fff3cd;border-bottom:2px solid #000;text-align:center;padding:5px;font-size:9pt;font-weight:700;color:#856404}
+    .rental-section{border-bottom:1px solid #999}
+    .rental-section:last-child{border-bottom:none}
+    .rental-section-title{background:#e8f0fe;font-size:8.5pt;font-weight:700;padding:4px 10px;border-bottom:1px solid #999}
+    .rental-section-body{padding:8px 10px}
+    .rental-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:8.5pt}
+    .rental-field-row{display:flex;gap:4px;margin-bottom:3px;align-items:baseline}
+    .rfl{color:#444;min-width:72px;flex-shrink:0;font-size:8pt}
+    .rfv{font-weight:500;flex:1;border-bottom:1px dotted #999;min-height:14px;padding-bottom:1px}
+    .rental-contract-tbl{width:100%;border-collapse:collapse;font-size:8.5pt}
+    .rental-contract-tbl th{background:#1e3a8a;color:#fff;padding:5px 4px;text-align:center;border:1px solid #1e3a8a}
+    .rental-contract-tbl td{padding:4px 5px;border:1px solid #ccc;text-align:center}
+    .rental-contract-tbl td.rctl{text-align:left;padding-left:6px}
+    .rental-term-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid #eee;font-size:8.5pt}
+    .rental-term-row:last-child{border-bottom:none}
+    .rental-check{color:#1e3a8a;font-size:10pt;font-weight:700;flex-shrink:0}
+    .rental-confirm{font-size:8pt;color:#333;margin-left:auto;white-space:nowrap;background:#f0f4ff;padding:2px 8px;border-radius:3px}
+    .rental-sig-row{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:0 16px;align-items:center;font-size:8.5pt;margin-top:6px}
+    .rental-sig-label{color:#555;white-space:nowrap}
+    .rental-sig-line{border-bottom:1px solid #333;height:22px}
+    .rental-info-box{background:#f8fafc;border:1px solid #ddd;padding:6px 10px;font-size:8pt;margin-top:8px;line-height:1.8}
+    .rental-clause-art{margin-bottom:10px}
+    .rental-clause-art h3{font-size:9pt;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:4px;color:#1e3a8a}
+    .rental-clause-art p,.rental-clause-art ol{font-size:8.5pt;line-height:1.8;color:#222}
+    .rental-clause-art ol{padding-left:18px}
+    .rental-clause-art li{margin-bottom:3px}
+    .page-break{page-break-after:always}
+    .page-label{font-size:8pt;color:#888;text-align:right;margin-bottom:4px}
+    @media print{@page{size:A4 portrait;margin:10mm 12mm}}
+  `;
+}
+
+// ── 1페이지: 계약서 표지 ──
+function renderRentalPage1() {
+  const me = getMe(), cu = getCust();
+  const c = calcRentalTotal();
+  const deposit = numVal('r-deposit');
+  const debitAmt = numVal('r-debitAmt') || c.total;
+  const totalWithDeposit = c.total + deposit;
+
+  const itemRows = rentalItems.length ? rentalItems.map((it,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td class="rctl">${esc(it.name)||'-'}</td>
+      <td>${fmt(it.bcount)} 장</td>
+      <td>${fmt(it.ccount)} 장</td>
+      <td>${fmt(it.bprice)} 원</td>
+      <td>${fmt(it.cprice)} 원</td>
+      <td>${it.qty} 대</td>
+      <td>${esc(it.install)||'-'}</td>
+      <td style="text-align:right;font-weight:600">${fmt(it.monthly)} 원</td>
+      <td style="font-size:8pt">VAT별도</td>
+    </tr>`).join('')
+    : `<tr><td colspan="10" style="text-align:center;padding:10px;color:#999">물품 없음</td></tr>`;
+
+  const terms = [
+    ['rt1','약정기간내 중도해지시 남은 기간의 50%가 위약금으로 발생 된다.'],
+    ['rt2','중도해지시 설치비 및 철거비 5만원, 등록비 10만원 청구된다. (단, 레이져는 설치비 및 철거비 10만원, 등록비 20만원 청구)'],
+    ['rt3','기계 이전시 기본 3만원 청구된다. (단, 거리에 따라 차등적용된다.)'],
+    ['rt4','만료일 15일 이전에 계약 해지여부를 통보하지 않을 경우 본 계약과 동일한 조건으로 1년 단위로 자동연장'],
+    ['rt5','첨부된 이용약관자료를 모두 이해 하였습니다.']
+  ].map(([id,def]) => val(id)||def);
+
+  const extras = [
+    ['re1','월 제공매수 초과 시에는 초과사용 임대료가 추가 청구된다는 내용에 대해 설명받았습니다.'],
+    ['re2','프린터 사용법 및 주의사항을 안내받았습니다.'],
+    ['re3','프린터 연결 사용 시 인터넷환경, 공유기 상태에 따라 출력이 원활치 않을 수 있기 때문에 당사 서비스팀의 진단 후 A/S 진행여부가 결정된다는 내용을 설명받았습니다.'],
+    ['re4','PC포맷, 바이러스로 인한 케이블 임의 제거로 PC문제로 인한 출장시, 회당 출장비 3만원 이상의 출장비가 부과된다.']
+  ].map(([id,def]) => val(id)||def);
+
+  return `<div class="rental-doc">
+  <div class="page-label">[ 1 / 3 페이지 — 렌탈(임대) 계약서 표지 ]</div>
+  <div class="rental-outer-box">
+    <div class="rental-title-bar">렌탈(임대) 계약서</div>
+    <div class="rental-notice">★ 모든 임대료는 선불입니다 ★</div>
+
+    <!-- 신청정보 -->
+    <div class="rental-section">
+      <div class="rental-section-title">신 청 정 보</div>
+      <div class="rental-section-body">
+        <div class="rental-field-grid">
+          <div class="rental-field-row"><span class="rfl">회사상호</span><span class="rfv">${esc(cu.name)}</span></div>
+          <div class="rental-field-row"><span class="rfl">주민등록번호<br>(사업자번호)</span><span class="rfv">${esc(cu.reg)}</span></div>
+          <div class="rental-field-row"><span class="rfl">요청자 성함</span><span class="rfv">${esc(val('r-person'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">휴대폰 번호</span><span class="rfv">${esc(val('r-mobile'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">설치 주소</span><span class="rfv">${esc(cu.addr)}</span></div>
+          <div class="rental-field-row"><span class="rfl">전화 / 팩스</span><span class="rfv">${esc(cu.tel)}${cu.fax?' / '+esc(cu.fax):''}</span></div>
+          <div class="rental-field-row"><span class="rfl">발행 구분</span><span class="rfv">□ ${esc(val('r-billing')||'전자세금계산서')}</span></div>
+          <div class="rental-field-row"><span class="rfl">이메일주소</span><span class="rfv">${esc(val('r-billEmail')||cu.email)}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 계약내용 -->
+    <div class="rental-section">
+      <div class="rental-section-title">계 약 내 용</div>
+      <div class="rental-section-body">
+        <table class="rental-contract-tbl" style="margin-bottom:8px">
+          <thead><tr>
+            <th style="width:4%">#</th>
+            <th style="width:18%">렌탈물품</th>
+            <th style="width:10%">기본(흑)</th>
+            <th style="width:10%">기본(컬)</th>
+            <th style="width:10%">추가(흑)</th>
+            <th style="width:10%">추가(컬)</th>
+            <th style="width:7%">수량</th>
+            <th style="width:10%">설치비</th>
+            <th style="width:13%">월 렌탈료</th>
+            <th style="width:8%">비고</th>
+          </tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <div style="display:flex;gap:16px;font-size:8.5pt;align-items:center;flex-wrap:wrap">
+          <span>* 보증금 : <strong>${fmt(deposit)} 원</strong> (기본 2개월치)</span>
+          <span>/ 최초설치비 : <strong>${rentalItems.length && rentalItems[0].install ? esc(rentalItems[0].install) : '무료'}</strong></span>
+          <span style="margin-left:auto;font-size:10pt;font-weight:900;color:#1e3a8a">합계금액 : ${fmt(c.total)} 원 <span style="font-size:8pt;font-weight:400">(VAT포함)</span></span>
+        </div>
+        <div style="margin-top:4px;font-size:9pt;font-weight:700">기본 계약기간 : ${esc(val('r-period')||'3')} 년</div>
+      </div>
+    </div>
+
+    <!-- 약관 -->
+    <div class="rental-section">
+      <div class="rental-section-title">약 관</div>
+      <div class="rental-section-body">
+        ${terms.map(t => `
+          <div class="rental-term-row">
+            <span class="rental-check">*</span>
+            <span style="flex:1;font-size:8.5pt">${esc(t).replace(/\n/g,'<br>')}</span>
+            <span class="rental-confirm">확인함 ■</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- 기타 -->
+    <div class="rental-section">
+      <div class="rental-section-title">기 타</div>
+      <div class="rental-section-body">
+        ${extras.map(t => `
+          <div class="rental-term-row">
+            <span class="rental-check">▪</span>
+            <span style="flex:1;font-size:8.5pt">${esc(t).replace(/\n/g,'<br>')}</span>
+            <span class="rental-confirm">확인함 ■</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- 구비서류 -->
+    <div class="rental-section">
+      <div class="rental-section-title">구비서류 (계약 당일 제출필수)</div>
+      <div class="rental-section-body" style="font-size:8.5pt;line-height:1.8">
+        ▶ 본인인 경우: 1. 신분증 사본 &nbsp; 2. 통장사본 &nbsp; 3. 사업자등록증 사본(사업자에 한함) &nbsp; 4. 명함<br>
+        ▶ 신청인과 다른 경우: 대리인 신분증 포함<br>
+        ▶ 법인인 경우: 1. 대표자 신분증 사본 &nbsp; 2. 통장사본 &nbsp; 3. 사업자등록증 사본 &nbsp; 4. 요청자명함
+      </div>
+    </div>
+
+    <!-- 서명 -->
+    <div class="rental-section">
+      <div class="rental-section-body">
+        <div style="font-size:8.5pt;margin-bottom:8px;line-height:1.7">
+          ${esc(me.name||'한별시스템')}의 이용약관, 자동이체 신청동의 및 부가사항을 읽고 확인했으며, 위와 같이 프린터 임대서비스 이용을 신청합니다.
+        </div>
+        <div style="font-size:9pt;font-weight:600;margin-bottom:10px">${dateStr(getDocDate())} &nbsp; 년 &nbsp; 월 &nbsp; 일</div>
+        <div class="rental-sig-row">
+          <span class="rental-sig-label">담당자</span>
+          <div class="rental-sig-line"></div>
+          <span class="rental-sig-label">&nbsp;&nbsp;(인) 또는 서명</span>
+          <div></div>
+        </div>
+        <div class="rental-info-box" style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong>서비스 공급자: ${esc(me.name||'한별시스템')}</strong><br>
+              대표번호 ${esc(me.tel||'053-588-7119')} &nbsp;|&nbsp; 담당자 ${esc(me.ceo||'-')}<br>
+              ${me.bank ? `입금계좌: ${esc(me.bank)} ${esc(me.account)} (${esc(me.holder||me.name)})` : ''}
+            </div>
+            <div style="text-align:center;border:1px solid #ccc;padding:8px 16px;border-radius:4px">
+              <div style="font-size:8pt;color:#666">공급자 서명</div>
+              <div style="height:30px"></div>
+              <div style="border-top:1px solid #999;font-size:9pt;font-weight:700;padding-top:4px">${esc(me.name||'한별시스템')} (인)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ── 2페이지: 자동이체 신청서 ──
+function renderRentalPage2() {
+  const me = getMe(), cu = getCust();
+  const c = calcRentalTotal();
+  const debitAmt = numVal('r-debitAmt') || c.total;
+
+  return `<div class="rental-doc">
+  <div class="page-label">[ 2 / 3 페이지 — 자동이체 신청서 ]</div>
+  <div class="rental-outer-box">
+    <div class="rental-title-bar" style="font-size:14pt;letter-spacing:4px">자 동 이 체 신 청 서</div>
+
+    <div class="rental-section">
+      <div class="rental-section-title">신 청 인 정 보</div>
+      <div class="rental-section-body">
+        <div class="rental-field-grid">
+          <div class="rental-field-row"><span class="rfl">회사명/성함</span><span class="rfv">${esc(cu.name)}</span></div>
+          <div class="rental-field-row"><span class="rfl">사업자번호</span><span class="rfv">${esc(cu.reg)}</span></div>
+          <div class="rental-field-row"><span class="rfl">요청자</span><span class="rfv">${esc(val('r-person'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">휴대폰</span><span class="rfv">${esc(val('r-mobile'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">주소</span><span class="rfv">${esc(cu.addr)}</span></div>
+          <div class="rental-field-row"><span class="rfl">전화/팩스</span><span class="rfv">${esc(cu.tel)}${cu.fax?' / '+esc(cu.fax):''}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rental-section">
+      <div class="rental-section-title">출 금 계 좌 정 보</div>
+      <div class="rental-section-body">
+        <div class="rental-field-grid">
+          <div class="rental-field-row"><span class="rfl">금융기관명</span><span class="rfv">${esc(val('r-bank'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">계좌번호</span><span class="rfv">${esc(val('r-account'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">예금주</span><span class="rfv">${esc(val('r-holder'))}</span></div>
+          <div class="rental-field-row"><span class="rfl">주민번호/사업자</span><span class="rfv">${esc(val('r-resid'))}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rental-section">
+      <div class="rental-section-title">자 동 이 체 내 용</div>
+      <div class="rental-section-body">
+        <div class="rental-field-grid">
+          <div class="rental-field-row"><span class="rfl">출금일</span><span class="rfv">매월 ${esc(val('r-debitDay')||'___')}일</span></div>
+          <div class="rental-field-row"><span class="rfl">출금금액</span><span class="rfv" style="font-weight:700;font-size:10pt;color:#1e3a8a">${fmt(debitAmt)} 원 (VAT포함)</span></div>
+          <div class="rental-field-row"><span class="rfl">출금용도</span><span class="rfv">프린터 임대료 (${esc(me.name||'한별시스템')})</span></div>
+          <div class="rental-field-row"><span class="rfl">입금계좌</span><span class="rfv">${esc(me.bank||'')} ${esc(me.account||'')} (${esc(me.holder||me.name||'')})</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rental-section">
+      <div class="rental-section-body" style="font-size:8.5pt;line-height:2">
+        <div style="margin-bottom:8px">
+          ※ 본인은 위 계좌에서 정기 자동이체 출금에 동의합니다.<br>
+          ※ 렌탈료 변동(추가요금 발생 등) 시 출금금액이 변경될 수 있습니다.<br>
+          ※ 자동이체 미출금 시 매 2일 단위로 재출금을 요청하며 최대 3번까지 청구합니다.<br>
+          ※ 잔액 부족 등으로 인한 미납 시 자동이체약관에 의거하여 처리합니다.
+        </div>
+        <div style="font-size:9pt;font-weight:600;margin-bottom:14px">${dateStr(getDocDate())} &nbsp;&nbsp; 년 &nbsp;&nbsp; 월 &nbsp;&nbsp; 일</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
+          <div style="border:1px solid #333;padding:12px;text-align:center">
+            <div style="font-size:9pt;font-weight:700;margin-bottom:6px;text-align:left">신청인 (출금 동의자)</div>
+            <div style="height:36px"></div>
+            <div style="border-top:1px solid #999;padding-top:4px;font-size:8.5pt">
+              성명: ${esc(val('r-person')||cu.ceo||'________________')} &nbsp; (인)
+            </div>
+          </div>
+          <div style="border:1px solid #333;padding:12px;text-align:center">
+            <div style="font-size:9pt;font-weight:700;margin-bottom:6px;text-align:left">수취인 (서비스 공급자)</div>
+            <div style="height:36px"></div>
+            <div style="border-top:1px solid #999;padding-top:4px;font-size:8.5pt">
+              ${esc(me.name||'한별시스템')} &nbsp; (인)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ── 3페이지: 서비스 이용약관 ──
+function renderRentalPage3() {
+  const me = getMe(), cu = getCust();
+  const clauses = [
+    ['rc1','제1조 【계약의 목적】',
+      `"을"소유의 복사기를 "갑"에게 임대하고 "갑"은 이를 임차하여 임대료를 지급할 것을 약정한다.`],
+    ['rc2','제2조 【계약기간】',
+      `1. 본 임대차의 계약기간은 계약서 표지에서 정한 바에 따른다.\n2. 기간만료 전 1개월 전까지 서면에 의한 계약종료의 의사표시를 하지 않는 한 계약기간은 1년간 자동적으로 갱신된다.`],
+    ['rc3','제3조 【복사기의 인도/철거】',
+      `1. "갑"은 "을"이 지정하는 장소에서 "을" 또는 "을"이 지정하는 자에게 물품을 인도하기로 하며, 인도 및 철거에 소요되는 제비용(설치비 및 철거비 각 5만원, 등록비 10만원)은 약정계약기간을 유지하는 조건으로 갑이 부담하며, 렌탈계약이 중도에 해지되는 경우 약정 면제되었던 제비용은 "을"의 부담으로 전환하며 철거 전 제비용 전액을 납부하여야 한다.\n※ 단, 레이저프린터와 복사기의 인도 및 철거에 소요되는 제비용은 설치비 및 철거비 각 10만원, 등록비 20만원으로 한다.`],
+    ['rc4','제4조 【유지보수】',
+      `"을" 소유의 복사기를 "갑"에게 임대함에 있어 계약기간 중 복사기를 양호한 상태로 유지시키기 위하여 "을"의 책임 하에 다음 각 호의 유지보수와 소모품 및 부품 등을 "갑"에게 공급하는 것을 말한다.\n1. "을"은 렌탈복사기에 대한 보수 및 점검을 실시하여 소모품 및 부품의 교환 또는 수리를 하여 최상의 운용 상태와 충분한 기능을 발휘할 수 있는 상태를 유지한다.\n2. "을"은 복사용지를 제외한 부품 및 소모품을 무상공급 A/S를 한다. 단, 천재지변은 예외로 한다.\n3. 복사기의 고장 등 기능 이상 시 "을"은 즉시 사용 가능한 상태로 조치한다.\n4. 유지보수 시간은 "갑"의 근무시간 내로 한다.`],
+    ['rc5','제5조 【준수사항】',
+      `1. "갑"은 "을"의 복사기에 대해 제3자 등 어떠한 권리도 설정하지 않을 것을 확약한다.\n2. "갑"은 복사기를 임의로 개조하거나 제3자에게 대여할 수 없다.\n3. "갑"은 "을"과의 서면합의 없이 임대장소(설치장소)를 변경할 수 없다.\n4. "갑"은 회사 이전 혹은 이사로 인한 이전설치 요구시 비용이 발생된다.`],
+    ['rc6','제6조 【물품의 회수 및 반환】',
+      `1. "갑"이 물품회수를 요청할 경우, "갑"의 미납요금과 위약금 그리고 추가청구 금액 등의 미납금액이 모두 결제가 완료된 후에 물품을 회수한다. "갑"의 미납금액이 남아있어 "을"의 물품회수가 지연되는 경우, 미납금액이 전액 결제완료 될 때까지 본 계약은 지속적으로 유지되며, 그와 관련하여 소요되는 비용 또는 손해는 "갑"이 부담하여야 한다.\n2. 임대 만기 이후 보증금은 고객에게 반환된다.`],
+    ['rc7','제7조 【임대료】',
+      `1. 렌탈계약서에 기재된 약정계약기간 동안 렌탈할 것을 전제로 월 렌탈료를 정한다.\n2. 초기 1회분 입금 이후 렌탈계약서에 표기된 약정일에 "갑"이 지정하는 계좌로부터 "을"의 계좌로 자동이체 한다.\n3. "갑"이 임대료의 지급을 2회 이상 연속하여 연체하였을 때에는 "을"은 사전 최고 없이 이 계약을 해지할 수 있다. 해지통지를 받았을 때 "갑"은 7일 이내에 복사기를 "을"에게 반환 하여야 하며, "갑"은 연체금액의 연24%에 해당하는 연체료를 "을"에게 지불해야 한다.\n4. 자동이체 미출금 시 매 2일 단위로 재출금을 요청하며 최대 3번까지 청구한다.\n5. 임대료 선금과 추가요금 후불로 처리된다. 자동이체 출금시 추가된 요금이 자동출금 된다.`]
+  ];
+
+  const artHtml = clauses.map(([id, title, def]) => {
+    const text = val(id) || def;
+    const lines = text.split('\n');
+    const isNumbered = lines.some(l => /^\d+\./.test(l.trim()));
+    let body;
+    if (isNumbered) {
+      const intro = lines.filter(l => !/^\d+\./.test(l.trim()) && l.trim());
+      const items = lines.filter(l => /^\d+\./.test(l.trim()));
+      body = (intro.length ? `<p style="margin-bottom:4px">${esc(intro.join(' '))}</p>` : '') +
+        `<ol>${items.map(l => `<li>${esc(l.replace(/^\d+\.\s*/,''))}</li>`).join('')}</ol>`;
+    } else {
+      body = `<p>${esc(text).replace(/\n/g,'<br>')}</p>`;
+    }
+    return `<div class="rental-clause-art"><h3>${title}</h3>${body}</div>`;
+  }).join('');
+
+  return `<div class="rental-doc">
+  <div class="page-label">[ 3 / 3 페이지 — 서비스 이용약관 ]</div>
+  <div style="text-align:center;font-size:14pt;font-weight:900;letter-spacing:4px;margin-bottom:6px;padding:8px;background:#1e3a8a;color:#fff">서비스 이용약관 V.2</div>
+  <div style="text-align:left;font-size:9pt;margin-bottom:14px;padding:8px;border:1px solid #ddd;background:#f8f9fa">
+    <strong>${esc(cu.name||'______________')}</strong> (이하 "갑"이라 한다)와<br>
+    <strong>${esc(me.name||'한별시스템')}</strong>(이하 "을"이라 한다)은 "을" 소유 복사기의 임대차계약을 다음과 같이 체결한다.
+  </div>
+  ${artHtml}
+  <div style="margin-top:16px;padding-top:10px;border-top:2px solid #1e3a8a;font-size:8.5pt;text-align:center;color:#555">
+    본 이용약관은 ${esc(me.name||'한별시스템')}과 고객 간의 렌탈 서비스에 적용됩니다. &nbsp;|&nbsp; 문의: ${esc(me.tel||'')}
+  </div>
+</div>`;
+}
+
+// ── 미리보기: 3페이지 전체 표시 ──
+function renderRentalAll() {
+  updateRentalTotals();
+  return `
+    ${renderRentalPage1()}
+    <div class="page-separator"></div>
+    ${renderRentalPage2()}
+    <div class="page-separator"></div>
+    ${renderRentalPage3()}
+  `;
+}
+
+// ── 인쇄 함수들 ──
+function printRentalPage(pageNum) {
+  const fns = { 1: renderRentalPage1, 2: renderRentalPage2, 3: renderRentalPage3 };
+  const titles = { 1:'임대계약서 표지', 2:'자동이체 신청서', 3:'서비스 이용약관' };
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head>
+    <meta charset="UTF-8"><title>${titles[pageNum]}</title>
+    <style>${getRentalDocCSS()}</style>
+    </head><body style="padding:10mm 12mm">${fns[pageNum]()}
+    <script>window.onload=()=>{window.print()}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+function printRentalAll() {
+  const pages = [renderRentalPage1(), renderRentalPage2(), renderRentalPage3()];
+  const combined = pages.map((p,i) =>
+    `<div class="${i<2?'page-break':''}">${p}</div>`
+  ).join('');
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="ko"><head>
+    <meta charset="UTF-8"><title>임대계약서 3종</title>
+    <style>${getRentalDocCSS()}</style>
+    </head><body style="padding:10mm 12mm">${combined}
+    <script>window.onload=()=>{window.print()}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+// ── 임대 기본값 채우기 ──
+function fillRentalDefaults() {
+  // 약관 기본값은 render 시 val(id)||default 로 처리하므로 빈 상태 유지
+  // 자동이체 금액 수동입력 감지
+  const el = $('r-debitAmt');
+  if (el) el.addEventListener('input', () => { el._userEdited = el.value !== ''; });
+}
+
+// =============================================
+// TRANSACTION SAVE/LOAD
+// =============================================
+function saveTransaction() {
+  const cu = getCust();
+  const name = `${dateStr(getDocDate())} - ${cu.name||'거래처 미입력'} (${val('docNum')||'번호 없음'})`;
+  const txn = {
+    id: Date.now(), name,
+    docType: currentTab,
+    docNum: val('docNum'), docDate: val('docDate'),
+    customer: cu,
+    items: JSON.parse(JSON.stringify(items)),
+    vatMode: val('vatMode'), discount: val('discount'),
+    validPeriod: val('validPeriod'), deliveryDate: val('deliveryDate'),
+    deliveryPlace: val('deliveryPlace'), paymentCond: val('paymentCond'),
+    taxType: val('taxType'), deliveryActual: val('deliveryActual'), note: val('note'),
+    ctPeriod: val('ctPeriod'), ctDeadline: val('ctDeadline'),
+    ct1: val('ct1'), ct2: val('ct2'), ct3: val('ct3'), ct4: val('ct4'), ct5: val('ct5'),
+    ctSpecial: val('ctSpecial'),
+    // 임대계약서 전용
+    rentalItems: JSON.parse(JSON.stringify(rentalItems)),
+    rPerson: val('r-person'), rMobile: val('r-mobile'),
+    rBilling: val('r-billing'), rBillEmail: val('r-billEmail'),
+    rDeposit: val('r-deposit'), rPeriod: val('r-period'),
+    rBank: val('r-bank'), rAccount: val('r-account'),
+    rHolder: val('r-holder'), rResid: val('r-resid'),
+    rDebitDay: val('r-debitDay'), rDebitAmt: val('r-debitAmt'),
+    rt1: val('rt1'), rt2: val('rt2'), rt3: val('rt3'), rt4: val('rt4'), rt5: val('rt5'),
+    re1: val('re1'), re2: val('re2'), re3: val('re3'), re4: val('re4'),
+    rc1: val('rc1'), rc2: val('rc2'), rc3: val('rc3'), rc4: val('rc4'),
+    rc5: val('rc5'), rc6: val('rc6'), rc7: val('rc7')
+  };
+  let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+  // 같은 docNum 있으면 덮어쓰기
+  const existing = list.findIndex(t => t.docNum === txn.docNum && txn.docNum);
+  if (existing >= 0) list[existing] = txn; else list.unshift(txn);
+  if (list.length > 100) list = list.slice(0, 100);
+  localStorage.setItem(KEY_TRANSACTIONS, JSON.stringify(list));
+  showToast('거래가 저장되었습니다.');
+}
+function openHistory() {
+  const list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+  const el = $('historyList');
+  if (!list.length) { el.innerHTML = '<p style="text-align:center;color:#999;padding:20px">저장된 거래가 없습니다.</p>'; }
+  else {
+    const typeLabel = { quote:'견적서', statement:'거래명세표', tax:'세금계산서', contract:'계약서', rental:'📑임대계약서' };
+    const typeColor = { quote:'#1a56db', statement:'#059669', tax:'#d97706', contract:'#374151', rental:'#7c3aed' };
+    el.innerHTML = list.map(t => {
+      const tp = t.docType||'quote';
+      return `
+      <div class="history-item" onclick="loadTransaction(${t.id})">
+        <div class="hi-info">
+          <h4>${esc(t.name)} <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${typeColor[tp]||'#6b7280'};color:#fff;font-weight:600">${typeLabel[tp]||tp}</span></h4>
+          <span>${esc(t.customer?.name||'')} | 문서번호: ${esc(t.docNum||'-')}</span>
+        </div>
+        <button class="hi-del" onclick="event.stopPropagation();deleteTransaction(${t.id})">🗑</button>
+      </div>`;
+    }).join('');
+  }
+  openModal('modalHistory');
+}
+function loadTransaction(id) {
+  const list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+  const t = list.find(x => x.id === id);
+  if (!t) return;
+  $('docNum').value = t.docNum||'';
+  $('docDate').value = t.docDate||'';
+  // customer
+  const cu = t.customer||{};
+  ['name','reg','ceo','person','dept','biz','addr','tel','fax','email'].forEach(k => {
+    const el = $('c-'+k); if(el) el.value = cu[k]||'';
+  });
+  // items
+  items = t.items||[];
+  renderItemRows();
+  // conditions
+  $('vatMode').value = t.vatMode||'add';
+  $('discount').value = t.discount||'0';
+  $('validPeriod').value = t.validPeriod||'';
+  $('deliveryDate').value = t.deliveryDate||'';
+  $('deliveryPlace').value = t.deliveryPlace||'';
+  $('paymentCond').value = t.paymentCond||'';
+  $('taxType').value = t.taxType||'청구';
+  $('deliveryActual').value = t.deliveryActual||'';
+  $('note').value = t.note||'';
+  // contract
+  $('ctPeriod').value = t.ctPeriod||'';
+  $('ctDeadline').value = t.ctDeadline||'';
+  ['ct1','ct2','ct3','ct4','ct5','ctSpecial'].forEach(k => { if($(k)) $(k).value = t[k]||''; });
+  // 임대계약서 데이터 복원
+  if (t.rentalItems) { rentalItems = t.rentalItems; renderRentalItemRows(); }
+  const rFields = ['r-person','r-mobile','r-billing','r-billEmail','r-deposit','r-period',
+    'r-bank','r-account','r-holder','r-resid','r-debitDay','r-debitAmt'];
+  const rKeys  = ['rPerson','rMobile','rBilling','rBillEmail','rDeposit','rPeriod',
+    'rBank','rAccount','rHolder','rResid','rDebitDay','rDebitAmt'];
+  rFields.forEach((fid,i) => { if($(fid)) $(fid).value = t[rKeys[i]]||''; });
+  ['rt1','rt2','rt3','rt4','rt5','re1','re2','re3','re4',
+   'rc1','rc2','rc3','rc4','rc5','rc6','rc7'].forEach(k => { if($(k)) $(k).value = t[k]||''; });
+  // 저장 당시 탭으로 전환
+  if (t.docType) {
+    const tabs = document.querySelectorAll('.doc-tab');
+    const types = ['quote','statement','tax','contract','rental'];
+    const idx = types.indexOf(t.docType);
+    if (idx >= 0) switchTab(t.docType, tabs[idx]);
+  }
+  closeModal('modalHistory');
+  renderAll();
+  showToast('거래를 불러왔습니다.');
+}
+function deleteTransaction(id) {
+  if (!confirm('이 거래를 삭제하시겠습니까?')) return;
+  let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+  list = list.filter(t => t.id !== id);
+  localStorage.setItem(KEY_TRANSACTIONS, JSON.stringify(list));
+  openHistory();
+}
+
+// =============================================
+// UI HELPERS
+// =============================================
+function toggleSection(hd) {
+  hd.classList.toggle('open');
+  const body = hd.nextElementSibling;
+  body.classList.toggle('open');
+}
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// =============================================
+// CONTRACT DEFAULTS
+// =============================================
+function fillContractDefaults() {
+  const defs = {
+    ct1: '본 계약은 "을"이 "갑"에게 제공하는 서비스 및 납품물의 범위, 조건, 대금 지급 방법 등을 명확히 하여 상호 권리와 의무를 규정함을 목적으로 한다.',
+    ct2: '"을"은 본 계약에서 정한 업무를 성실히 이행하여야 하며, "갑"은 업무 수행에 필요한 자료 및 협조를 제공하여야 한다. 양 당사자는 계약 이행 과정에서 중요한 사항 발생 시 지체 없이 통보하여야 한다.',
+    ct3: '양 당사자는 본 계약 이행 중 취득한 상대방의 영업정보, 기술정보, 고객정보 등 일체의 비밀정보를 제3자에게 누설하거나 본 계약 목적 외의 용도로 사용하여서는 아니 된다. 이 의무는 계약 종료 후 3년간 존속한다.',
+    ct4: '다음 각 호에 해당하는 경우 일방 당사자는 30일 전 서면 통보로 본 계약을 해지할 수 있다. ① 상대방이 본 계약을 위반하고 15일 이내에 시정하지 않은 경우 ② 상대방이 파산·해산·영업 정지 등의 사유가 발생한 경우',
+    ct5: '본 계약에 관한 분쟁이 발생한 경우 양 당사자는 상호 협의하여 해결하고, 협의가 이루어지지 않을 경우 "갑"의 소재지를 관할하는 법원을 전속 관할법원으로 한다.'
+  };
+  Object.entries(defs).forEach(([id, text]) => { if($(id) && !$(id).value) $(id).value = text; });
+}
+
+// =============================================
+// INIT
+// =============================================
+(function init() {
+  $('docDate').value = today();
+  $('docNum').value = ''; // 빈 상태로 (자동번호는 저장 시 필요 시 사용)
+  loadMyCompany();
+  loadCustomers();
+  fillContractDefaults();
+  fillRentalDefaults();
+  addItem(); // 초기 빈 품목 1개
+  items[0] = { name:'', spec:'', unit:'개', qty:1, price:0 };
+  renderItemRows();
+  // 임대 초기 빈 물품 1개
+  addRentalItem();
+  rentalItems[0] = { name:'', bcount:500, ccount:200, bprice:10, cprice:100, qty:1, install:'무료', monthly:0 };
+  renderRentalItemRows();
+  updateRentalTotals();
+  renderAll();
+})();
+</script>
+</body>
+</html>
