@@ -1482,7 +1482,7 @@ function getRentalDocCSS() {
     .cms-consent-title{font-size:8.5pt;font-weight:700;background:#e8edf5;padding:3px 8px;border:1px solid #333;margin-top:5px}
     @media print{
       @page{size:A4 portrait;margin:0}
-      body{margin:0;padding:0}
+      body{margin:0!important;padding:0!important}
       .page-fill{min-height:297mm;padding:10mm 12mm;page-break-after:always}
       .page-fill:last-of-type{page-break-after:auto}
       .page-label{display:none}
@@ -1861,103 +1861,10 @@ function renderRentalPage3() {
     </div>
   </div>
 </div>`;
-
-  return `<div class="rental-doc">
-  <div class="page-label">[ 2 / 3 페이지 — CMS 자동출금 이용신청서 ]</div>
-  <div class="rental-outer-box" style="padding:0">
-    <div class="rental-title-bar" style="font-size:13pt;letter-spacing:3px">계좌 / 신용카드 &nbsp; 자동출금 &nbsp; 이용신청서</div>
-    <div style="text-align:center;font-size:9pt;padding:4px 0;border-bottom:1px solid #333">
-      □&nbsp;신규 &nbsp;&nbsp;&nbsp; □&nbsp;변경 &nbsp;&nbsp;&nbsp; □&nbsp;해지
-    </div>
-
-    <div style="font-size:7.5pt;line-height:1.65;padding:5px 8px;border-bottom:1px solid #ccc;background:#fffdf0;color:#444">
-      ※ 전자금융거래법 관련 규정(시행령 10조)에 의거, 자동이체 신청시에는 반드시 서면/공인인증서/녹취를 통한 예금주/카드주/휴대폰명의자 본인의 동의가 필요합니다.<br>
-      ※ 신용카드 이용시 카드이용내역서상에 카드사에 따라 결제대행기관인 나이스, 나이스(올더게이트) 또는 효성에프엠에스의 이름으로 청구될 수 있으며, 계좌출금시에는 통장 내역에 수납기관이 지정한 통장기재내역으로 6자 이내 표시 됩니다.
-    </div>
-
-    <div class="cms-section-title">◈ 수납기관 및 요금정보 (수납기관 기재란)</div>
-    <table class="cms-table">
-      <colgroup><col style="width:28%"><col style="width:24%"><col style="width:20%"><col></colgroup>
-      <thead><tr><th>수납기관명</th><th>자동이체사유</th><th>금액</th><th>비고</th></tr></thead>
-      <tbody><tr>
-        <td style="text-align:center">${esc(me.name||'한별시스템')}</td>
-        <td style="text-align:center">프린터 임대료</td>
-        <td style="text-align:right">${fmt(debitAmt)} 원</td>
-        <td style="font-size:7.5pt">통장기재내역: ${bankMemo}</td>
-      </tr></tbody>
-    </table>
-
-    <div class="cms-section-title">◈ 납부자 정보 (수납기관 기재란)</div>
-    <table class="cms-table">
-      <tbody><tr>
-        <td class="cms-label" style="width:28%">납부자 번호(고객번호)</td>
-        <td>${esc(cu.reg||'')}</td>
-        <td class="cms-label" style="width:16%">이체개시</td>
-        <td style="width:18%">${startDate}</td>
-        <td class="cms-label" style="width:14%">지정 출금일</td>
-        <td>매월 <strong>${esc(val('r-debitDay')||'___')}</strong> 일</td>
-      </tr></tbody>
-    </table>
-
-    <div class="cms-section-title">◈ 신청인 정보 입력</div>
-    <table class="cms-table">
-      <tbody>
-        <tr>
-          <td class="cms-label" style="width:22%">신청인 성명</td>
-          <td style="width:28%">${esc(val('r-person')||cu.ceo||'')}</td>
-          <td class="cms-label" style="width:14%">이메일</td>
-          <td>${esc(cu.email||'')}</td>
-        </tr>
-        <tr>
-          <td class="cms-label">주 소</td>
-          <td colspan="3">${esc(cu.addr||'')}</td>
-        </tr>
-        <tr>
-          <td class="cms-label">연락처</td>
-          <td>${esc(cu.tel||'')}</td>
-          <td class="cms-label">휴대폰번호</td>
-          <td>${esc(val('r-mobile')||'')}</td>
-        </tr>
-        <tr>
-          <td class="cms-label">결제수단 선택</td>
-          <td colspan="3" style="font-size:9pt">
-            ${isCard
-              ? '□&nbsp;계좌(CMS) &nbsp;&nbsp; ☑&nbsp;신용카드'
-              : '☑&nbsp;계좌(CMS) &nbsp;&nbsp; □&nbsp;신용카드'}
-            &nbsp;&nbsp;<span style="font-size:7.5pt;color:#666">*계좌이용시 휴대폰번호 등으로 개설된 평생계좌번호는 이용 불가</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="cms-label">은행명 / 카드사</td>
-          <td>${esc(val('r-bank')||'')}</td>
-          <td class="cms-label">사업자번호</td>
-          <td>${esc(cu.reg||'')}</td>
-        </tr>
-        <tr>
-          <td class="cms-label">예금주 / 카드주 본인명</td>
-          <td>${esc(val('r-holder')||'')}</td>
-          <td class="cms-label">계좌 / 카드번호</td>
-          <td>${esc(val('r-account')||'')}</td>
-        </tr>
-        <tr>
-          <td class="cms-label">예금주/카드주 본인<br><span style="font-size:7.5pt;font-weight:400">주민번호 앞 6자리</span></td>
-          <td>${esc(val('r-resid')||'')} &nbsp;- &nbsp;*******</td>
-          <td class="cms-label">카드유효기간<br><span style="font-size:7.5pt;font-weight:400">(월 / 년) *카드선택시</span></td>
-          <td>${esc(val('r-cardExp')||'&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;')}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div style="font-size:7.5pt;color:#555;padding:4px 8px;border:1px solid #ccc;border-top:none;background:#fafafa">
-      ※ 법인공용카드, 선불카드, 해외발행카드 등 일부 카드는 이용이 불가능할 수 있습니다.<br>
-      ※ 연체, 잔액부족 등의 사유로 납부가 지연되는 경우가 발생하지 않도록 유의하여 주십시오.
-    </div>
-  </div>
-</div>`;
 }
 
-// ── 중복 제거 (이 함수는 위에서 이미 정의됨) ──
-function renderRentalPage3_REMOVED() {
+// ── (renderRentalPage3_REMOVED 삭제됨) ──
+/* function renderRentalPage3_REMOVED() {
   const me = getMe(), cu = getCust();
   const debitAmt = numVal('r-debitAmt') || calcRentalTotal().total;
 
@@ -2042,7 +1949,7 @@ function renderRentalPage3_REMOVED() {
 
   </div>
 </div>`;
-}
+} */
 
 // ── 미리보기: 3페이지 전체 표시 ──
 function renderRentalAll() {
