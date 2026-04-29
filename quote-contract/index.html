@@ -722,8 +722,8 @@ body.rental-mode .normal-only{display:none !important}
       <button class="btn normal-only" style="background:#d97706;color:#fff" onclick="printAll()">📤 4종 전체 출력</button>
       <!-- 임대계약서용 버튼 (rental-only) -->
       <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(1)">🖨️ 1장 계약서 표지</button>
-      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(2)">🖨️ 2장 자동이체신청서</button>
-      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(3)">🖨️ 3장 이용약관</button>
+      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(2)">🖨️ 2장 이용약관</button>
+      <button class="btn rental-only" style="background:#7c3aed;color:#fff" onclick="printRentalPage(3)">🖨️ 3장 자동이체신청서</button>
       <div class="sep rental-only"></div>
       <button class="btn rental-only" style="background:#d97706;color:#fff" onclick="printRentalAll()">📤 임대계약서 3장 전체 출력</button>
     </div>
@@ -2019,7 +2019,7 @@ function renderRentalAll() {
 // ── 인쇄 함수들 ──
 function printRentalPage(pageNum) {
   const fns = { 1: renderRentalPage1, 2: renderRentalPage2, 3: renderRentalPage3 };
-  const titles = { 1:'임대계약서 표지', 2:'자동이체 신청서', 3:'서비스 이용약관' };
+  const titles = { 1:'임대계약서 표지', 2:'서비스 이용약관', 3:'자동이체 신청서' };
   const win = window.open('','_blank','width=900,height=700');
   win.document.write(`<!DOCTYPE html><html lang="ko"><head>
     <meta charset="UTF-8"><title>${titles[pageNum]}</title>
