@@ -1482,9 +1482,20 @@ function getRentalDocCSS() {
     .cms-consent-title{font-size:8.5pt;font-weight:700;background:#e8edf5;padding:3px 8px;border:1px solid #333;margin-top:5px}
     @media print{
       @page{size:A4 portrait;margin:0}
-      body{margin:0!important;padding:0!important}
-      .page-fill{min-height:297mm;padding:10mm 12mm;page-break-after:always}
-      .page-fill:last-of-type{page-break-after:auto}
+      html,body{margin:0!important;padding:0!important;width:210mm}
+      .page-fill{
+        width:210mm;
+        height:297mm;
+        padding:10mm 12mm;
+        margin:0;
+        box-sizing:border-box;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+        page-break-after:auto;
+        page-break-inside:avoid;
+      }
+      .page-fill + .page-fill{page-break-before:always}
       .page-label{display:none}
       .rental-outer-box{border:2px solid #000}
     }
@@ -1971,7 +1982,7 @@ function printRentalPage(pageNum) {
   win.document.write(`<!DOCTYPE html><html lang="ko"><head>
     <meta charset="UTF-8"><title>${titles[pageNum]}</title>
     <style>${getRentalDocCSS()}</style>
-    </head><body style="padding:10mm 12mm;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${fns[pageNum]()}
+    </head><body style="margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${fns[pageNum]()}
     <script>window.onload=()=>{window.print()}<\/script>
     </body></html>`);
   win.document.close();
@@ -1983,7 +1994,7 @@ function printRentalAll() {
   win.document.write(`<!DOCTYPE html><html lang="ko"><head>
     <meta charset="UTF-8"><title>임대계약서 3종</title>
     <style>${getRentalDocCSS()}</style>
-    </head><body style="padding:10mm 12mm;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${combined}
+    </head><body style="margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${combined}
     <script>window.onload=()=>{window.print()}<\/script>
     </body></html>`);
   win.document.close();
