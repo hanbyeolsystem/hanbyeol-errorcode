@@ -1467,8 +1467,27 @@ function getRentalDocCSS() {
     .rental-clause-art ol{padding-left:18px}
     .rental-clause-art li{margin-bottom:3px}
     .page-break{page-break-after:always}
-    .page-label{font-size:8pt;color:#888;text-align:right;margin-bottom:4px}
-    @media print{@page{size:A4 portrait;margin:10mm 12mm}}
+    .page-label{font-size:8pt;color:#888;text-align:right;margin-bottom:2px}
+    /* 인쇄 페이지 채우기 */
+    .page-fill{min-height:274mm;display:flex;flex-direction:column;position:relative}
+    .page-fill+.page-fill{margin-top:0}
+    .v-spacer{flex:1}
+    /* CMS 테이블 */
+    .cms-section-title{font-size:9pt;font-weight:700;background:#1e3a8a;color:#fff;padding:3px 8px;margin:5px 0 0 0}
+    .cms-table{width:100%;border-collapse:collapse;font-size:8.5pt;margin-bottom:0}
+    .cms-table td,.cms-table th{border:1px solid #333;padding:3px 6px;vertical-align:middle}
+    .cms-table th{background:#dde3f0;font-weight:700;text-align:center}
+    .cms-label{font-weight:600;background:#f0f4f8;white-space:nowrap}
+    .cms-terms-block{border:1px solid #333;padding:6px 8px;font-size:8pt;line-height:1.75;margin:4px 0;white-space:pre-wrap;word-break:break-word}
+    .cms-consent-title{font-size:8.5pt;font-weight:700;background:#e8edf5;padding:3px 8px;border:1px solid #333;margin-top:5px}
+    @media print{
+      @page{size:A4 portrait;margin:0}
+      body{margin:0;padding:0}
+      .page-fill{min-height:297mm;padding:10mm 12mm;page-break-after:always}
+      .page-fill:last-of-type{page-break-after:auto}
+      .page-label{display:none}
+      .rental-outer-box{border:2px solid #000}
+    }
   `;
 }
 
@@ -1510,9 +1529,9 @@ function renderRentalPage1() {
     ['re4','PC포맷, 바이러스로 인한 케이블 임의 제거로 PC문제로 인한 출장시, 회당 출장비 3만원 이상의 출장비가 부과된다.']
   ].map(([id,def]) => val(id)||def);
 
-  return `<div class="rental-doc">
+  return `<div class="rental-doc page-fill">
   <div class="page-label">[ 1 / 3 페이지 — 렌탈(임대) 계약서 표지 ]</div>
-  <div class="rental-outer-box">
+  <div class="rental-outer-box" style="flex:1;display:flex;flex-direction:column;border:2px solid #000">
     <div class="rental-title-bar">렌탈(임대) 계약서</div>
     <div class="rental-notice">★ 모든 임대료는 선불입니다 ★</div>
 
@@ -1598,7 +1617,7 @@ function renderRentalPage1() {
     </div>
 
     <!-- 서명 -->
-    <div class="rental-section">
+    <div class="rental-section" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
       <div class="rental-section-body">
         <div style="font-size:8.5pt;margin-bottom:8px;line-height:1.7">
           ${esc(me.name||'한별시스템')}의 이용약관, 자동이체 신청동의 및 부가사항을 읽고 확인했으며, 위와 같이 프린터 임대서비스 이용을 신청합니다.
@@ -1630,11 +1649,10 @@ function renderRentalPage1() {
 </div>`;
 }
 
-// ── 2페이지: 서비스 이용약관 (복사기 + PC 통합) ──
+// ── 2페이지: 서비스 이용약관 (복사기 + PC 통합) — A4 2장 출력 ──
 function renderRentalPage2() {
   const me = getMe(), cu = getCust();
 
-  // 기본 약관 텍스트 (비어있으면 사용)
   const DEF = {
     art1: `"을" 소유의 컴퓨터(PC) 및 복사기를 "갑"에게 임대하고 "갑"은 이를 임차하여 임대료를 지급할 것을 약정한다.`,
     art2: `1. 본 임대차의 계약기간은 계약서 표지에서 정한 바에 따른다.\n2. 기간만료 전 1개월 전까지 서면에 의한 계약종료의 의사표시를 하지 않는 한 계약기간은 1년간 자동적으로 갱신된다.`,
@@ -1642,7 +1660,7 @@ function renderRentalPage2() {
     art4: `"을" 소유의 물품(PC 및 복사기)을 "갑"에게 임대함에 있어 계약기간 중 물품을 양호한 상태로 유지시키기 위하여 "을"의 책임 하에 다음 각 호의 유지보수와 소모품 및 부품 등을 "갑"에게 공급하는 것을 말한다.\n1. "을"은 렌탈 물품에 대한 보수 및 점검을 실시하여 소모품 및 부품의 교환 또는 수리를 하여 최상의 운용 상태와 충분한 기능을 발휘할 수 있는 상태를 유지한다.\n2. "을"은 복사용지를 제외한 부품 및 소모품을 무상공급 A/S를 한다. 단, 천재지변은 예외로 한다.\n3. 물품의 고장 등 기능 이상 시 "을"은 즉시 사용 가능한 상태로 조치한다.\n4. 유지보수 시간은 "갑"의 근무시간 내로 한다.\n5. PC의 경우, "을"이 제공하는 운영체제(OS) 및 기본 소프트웨어 라이선스 범위 내에서 사용하여야 하며, 임의 소프트웨어 설치로 인한 장애는 유지보수 범위에서 제외된다.`,
     art5: `1. "갑"은 "을"의 물품에 대해 제3자 등 어떠한 권리도 설정하지 않을 것을 확약한다.\n2. "갑"은 물품을 임의로 개조하거나 제3자에게 대여할 수 없다.\n3. "갑"은 "을"과의 서면합의 없이 임대장소(설치장소)를 변경할 수 없다.\n4. "갑"은 회사 이전 혹은 이사로 인한 이전설치 요구 시 비용이 발생된다.\n5. PC의 경우, "갑"은 무단 소프트웨어 설치·삭제, 하드웨어 임의 변경·업그레이드를 할 수 없다.\n6. "갑"은 바이러스 감염 예방 의무를 지며, 임차인 과실로 인한 데이터 손실 및 장비 손상에 대한 책임은 "갑"이 부담한다.`,
     art6: `1. "갑"이 물품회수를 요청할 경우, "갑"의 미납요금과 위약금 그리고 추가청구 금액 등의 미납금액이 모두 결제가 완료된 후에 물품을 회수한다. "갑"의 미납금액이 남아있어 "을"의 물품회수가 지연되는 경우, "갑"이 요청한 회수일자와 관계없이 미납금액이 전액 결제완료 될 때까지 본 계약은 지속적으로 유지되며, 그와 관련하여 소요되는 비용 또는 손해는 "갑"이 부담하여야 한다.\n2. 임대 만기 이후 보증금은 고객에게 반환된다.\n3. PC 반환 시 "갑"은 저장된 모든 데이터를 삭제하고 초기화한 상태로 반환하여야 한다. 단, "을"이 직접 초기화하는 경우 초기화 비용이 발생할 수 있다.`,
-    art7: `1. 렌탈계약서에 기재된 약정계약기간 동안 렌탈할 것을 전제로 월 렌탈료를 정한다.\n2. 초기 1회분 입금 이후 렌탈계약서에 표기된 약정일에 "갑"이 지정하는 계좌로부터 "을"의 계좌로 자동이체 한다.\n3. "갑"이 임대료의 지급을 2회 이상 연속하여 연체하였을 때에는 "을"은 사전 최고 없이 이 계약을 해지할 수 있다. 해지통지를 받았을 때 "갑"은 7일 이내에 물품을 "을"에게 반환하여야 하며, "갑"은 연체금액의 연24%에 해당하는 연체료를 "을"에게 지불해야 한다.\n4. 자동이체 미출금 시 매 2일 단위로 재출금을 요청하며 최대 3번까지 청구한다. 지정계좌에 잔액부족 및 기타 사유로 인한 렌탈료 미납 시에는 자동이체약관에 의거하여 처리한다.\n5. 임대료 선금과 추가요금 후불로 처리된다. 자동이체 출금 시 추가된 요금이 자동출금 된다.\n6. "갑"이 위 3항을 진행함과 동시에 개인정보를 제3자에게 제공한다. ①제공받는 자: 채권 추심팀 ②수집항목: 이름, 연락처, 은행명, 계좌번호, 예금주명, 주민번호앞6자리, 카드번호, 카드사, 카드유효기간, 이메일 등 ③보유 및 이용기간: 수집 이용 동의일부터 자동이체서비스 종료일까지, 해지일로부터 5년간 보존 후 파기(관계 법령에 의거)`,
+    art7: `1. 렌탈계약서에 기재된 약정계약기간 동안 렌탈할 것을 전제로 월 렌탈료를 정한다.\n2. 초기 1회분 입금 이후 렌탈계약서에 표기된 약정일에 "갑"이 지정하는 계좌로부터 "을"의 계좌로 자동이체 한다.\n3. "갑"이 임대료의 지급을 2회 이상 연속하여 연체하였을 때에는 "을"은 사전 최고 없이 이 계약을 해지할 수 있다. 해지통지를 받았을 때 "갑"은 7일 이내에 물품을 "을"에게 반환하여야 하며, "갑"은 연체금액의 연24%에 해당하는 연체료를 "을"에게 지불해야 한다.\n4. 자동이체 미출금 시 매 2일 단위로 재출금을 요청하며 최대 3번까지 청구한다. 지정계좌에 잔액부족 및 기타 사유로 인한 렌탈료 미납 시에는 자동이체약관에 의거하여 처리한다.\n5. 임대료 선금과 추가요금 후불로 처리된다. 자동이체 출금 시 추가된 요금이 자동출금 된다.\n6. "갑"이 위 3항을 진행함과 동시에 개인정보를 제3자에게 제공한다. ①제공받는 자: 채권 추심팀 ②수집항목: 이름, 연락처, 은행명, 계좌번호, 예금주명, 주민번호앞6자리, 카드번호, 카드사, 카드유효기간, 이메일 등 ③보유 및 이용기간: 수집 이용 동의일부터 자동이체서비스 종료일까지, 해지일로부터 5년간 보존 후 파기`,
     art8: `1. "갑"에게 다음 각호의 사유가 발생한 때에 "을"은 사전 최고 없이 계약을 해지할 수 있다.\n   1) 렌탈료의 납부를 2회 이상 연체한 때\n   2) 어음 또는 수표가 부도되어 은행의 거래정지 처분이 있거나 조세공과금의 체납으로 독촉 또는 체납처분을 받은 때\n   3) 사업이 휴업 또는 폐업되거나 회사가 해산한 때 또는 파산, 화의, 정리 등을 신청하거나 기타 신용을 상실한 때\n   4) 물품을 제3자에게 양도, 담보제공, 처분, 임대 또는 점유를 이전한 때\n   5) 이 계약의 내용을 위반하여 "갑"의 구두 또는 서면 최고를 받고도 7일 이내에 시정하지 아니한 때\n2. 계약이 중도 해지되는 경우 위약금은 [남은기간 50% + 설치비 + 철거비 + 등록비]가 청구된다. 중도 해지일이 약정기간 이내인 경우 "을"이 지불한 보증금은 "갑"에게 귀속된다.`,
     art9: `1. 렌탈료 납부의무 이행을 지연한 경우 "을"의 법무팀 또는 채권팀에서 "갑"의 렌탈료 납부의무 이행을 촉구하기 위하여 계약서에 기재된 연락처로 연락을 취할 수 있다.\n2. "을"이 이 계약에 따라 "갑"에게 이행하여야 할 채무를 불이행할 경우 이행의무가 발생한 날부터 완제하는 날까지 채무액에 대하여 연 24%의 지연 이자를 부가하여 납부하여야 한다.\n3. 전 2항의 연체료 및 지연이자는 따로 일괄하여 일할 계산하되 1년은 365일로 하여 백원미만은 버린다.`,
     art10: `본 계약과 관련하여 발생하는 모든 분쟁은 "갑"과 "을"이 협의하여 해결한다. 단, 본 계약으로 인한 분쟁이 발생하여 소송이 필요한 경우 주소지 관할법원에 한다.`,
@@ -1650,70 +1668,92 @@ function renderRentalPage2() {
     extra: `1. 잉크젯의 경우 월 제공매수(한면)에 해당하는 기본 월 렌탈료는 월납 선불제이며 월 초과출력에 대한 초과 렌탈료는 조회 시점에 일괄 후불 청구되며 모든 렌탈료(기본 월 렌탈료 및 월 초과 렌탈료)는 CMS자동이체 신청해야 합니다.\n2. 잉크젯의 경우 월 제공매수(한면)는 기기변경·교체·A/S 방문 또는 명의변경·재계약이 진행될 경우에 조회되며, 초과출력 발생 시 비용은 일괄 청구됩니다.\n3. 복사기의 경우 매월 자동관리 프로그램으로 월별 관리가 들어가며, 추가요금 발생 시 자동이체로 추가요금이 정산됩니다.\n4. PC의 경우, 운영체제(OS) 라이선스는 정품 소프트웨어로 제공되며, 계약 종료 시 라이선스는 "을"에게 귀속됩니다.\n5. PC 임대의 경우 하드웨어 스펙 변경(업그레이드)이 필요한 경우 별도 비용이 발생하며 "갑"과 "을"이 협의하여 결정한다.`
   };
 
-  function art(id, def) {
+  function artLine(id, def) {
     const t = val(id) || def;
-    const lines = t.split('\n');
-    const hasNum = lines.some(l => /^\d+[.)]\s/.test(l.trim()));
-    if (!hasNum) return `<p style="font-size:8pt;line-height:1.65;margin:0 0 1px 0">${esc(t).replace(/\n/g,'<br>')}</p>`;
-    return lines.filter(l=>l.trim()).map(l => {
-      if (/^\d+[.)]\s/.test(l.trim())) return `<div style="font-size:8pt;line-height:1.65;padding-left:10px">${esc(l.trim())}</div>`;
-      if (/^[①-⑩]|^※/.test(l.trim())) return `<div style="font-size:7.5pt;line-height:1.55;padding-left:16px;color:#333">${esc(l.trim())}</div>`;
-      return `<div style="font-size:8pt;line-height:1.65">${esc(l.trim())}</div>`;
+    return t.split('\n').filter(l=>l.trim()).map(l => {
+      const line = l.trim();
+      if (/^[0-9]+[.)]\s/.test(line)) return `<div style="padding-left:12px;line-height:1.7">${esc(line)}</div>`;
+      if (/^[①-⑩※▶]/.test(line))    return `<div style="padding-left:18px;line-height:1.65;color:#333">${esc(line)}</div>`;
+      return `<div style="line-height:1.7">${esc(line)}</div>`;
     }).join('');
   }
 
-  function section(title, id, def) {
-    return `<div style="margin-bottom:5px">
-      <div style="font-size:8.5pt;font-weight:700;background:#e8edf5;padding:2px 6px;border-left:3px solid #1e3a8a;margin-bottom:2px">${title}</div>
-      <div style="padding:1px 6px">${art(id, def)}</div>
+  function artBlock(title, id, def) {
+    return `<div style="margin-bottom:8px;page-break-inside:avoid">
+      <div style="font-size:9pt;font-weight:700;background:#e8f0fe;border-left:3px solid #1e3a8a;padding:3px 7px;margin-bottom:3px">${title}</div>
+      <div style="font-size:8.5pt;padding:0 4px">${artLine(id,def)}</div>
     </div>`;
   }
 
   const sp1 = val('rc-special1')||'', sp2 = val('rc-special2')||'';
+  const headerHtml = `
+    <div style="text-align:center;font-size:14pt;font-weight:900;letter-spacing:4px;padding:10px;background:#1e3a8a;color:#fff;margin-bottom:6px">서비스 이용약관</div>
+    <div style="font-size:9pt;padding:5px 8px;border:1px solid #ddd;background:#f8f9fa;margin-bottom:10px">
+      <strong>${esc(cu.name||'__________________')}</strong> (이하 "갑"이라 한다)와
+      <strong>${esc(me.name||'한별시스템')}</strong>(이하 "을"이라 한다)은 "을" 소유 컴퓨터(PC) 및 복사기의 임대차계약을 다음과 같이 체결한다.
+    </div>`;
 
-  return `<div class="rental-doc">
-  <div class="page-label">[ 2 / 3 페이지 — 서비스 이용약관 ]</div>
-  <div style="text-align:center;font-size:13pt;font-weight:900;letter-spacing:4px;padding:7px;background:#1e3a8a;color:#fff;margin-bottom:4px">서비스 이용약관</div>
-  <div style="font-size:8.5pt;padding:4px 8px;border:1px solid #ddd;background:#f8f9fa;margin-bottom:6px">
-    <strong>${esc(cu.name||'__________________')}</strong> (이하 "갑"이라 한다)와
-    <strong>${esc(me.name||'한별시스템')}</strong>(이하 "을"이라 한다)은 "을" 소유 컴퓨터(PC) 및 복사기의 임대차계약을 다음과 같이 체결한다.
+  // ── 2페이지 1번째 A4: 제1조~제6조 ──
+  const page2a = `<div class="rental-doc page-fill">
+  <div class="page-label">[ 2 / 3 페이지 — 서비스 이용약관 (1/2) ]</div>
+  ${headerHtml}
+  ${artBlock('제1조 【계약의 목적】','rc-art1',DEF.art1)}
+  ${artBlock('제2조 【계약기간】','rc-art2',DEF.art2)}
+  ${artBlock('제3조 【물품의 인도 / 철거】','rc-art3',DEF.art3)}
+  ${artBlock('제4조 【유지보수】','rc-art4',DEF.art4)}
+  ${artBlock('제5조 【준수사항】','rc-art5',DEF.art5)}
+  ${artBlock('제6조 【물품의 회수 및 반환】','rc-art6',DEF.art6)}
+  <div class="v-spacer"></div>
+  <div style="text-align:center;font-size:8pt;color:#aaa;padding-top:6px;border-top:1px dashed #ccc">— 다음 페이지에 계속 —</div>
+</div>`;
+
+  // ── 2페이지 2번째 A4: 제7조~제11조 + 자동이체약관 + 부가사항 + 특약사항 + 서명 ──
+  const page2b = `<div class="rental-doc page-fill">
+  <div class="page-label">[ 2 / 3 페이지 — 서비스 이용약관 (2/2) ]</div>
+  ${artBlock('제7조 【임대료】','rc-art7',DEF.art7)}
+  ${artBlock('제8조 【계약의 중도 해지】','rc-art8',DEF.art8)}
+  ${artBlock('제9조 【연체료 및 지연배상금】','rc-art9',DEF.art9)}
+  ${artBlock('제10조 【분쟁의 해결】','rc-art10',DEF.art10)}
+  <div style="margin-top:8px;border-top:1px solid #bbb;padding-top:6px">
+    <div style="font-size:9pt;font-weight:700;background:#dde3f0;border-left:3px solid #1e3a8a;padding:3px 7px;margin-bottom:3px">■ 자동이체 약관</div>
+    <div style="font-size:8.5pt;padding:0 4px">${artLine('rc-auto',DEF.autoTerms)}</div>
   </div>
-
-  <div style="columns:2;column-gap:10px;column-rule:1px solid #ddd">
-    ${section('제1조 【계약의 목적】','rc-art1', DEF.art1)}
-    ${section('제2조 【계약기간】','rc-art2', DEF.art2)}
-    ${section('제3조 【물품의 인도/철거】','rc-art3', DEF.art3)}
-    ${section('제4조 【유지보수】','rc-art4', DEF.art4)}
-    ${section('제5조 【준수사항】','rc-art5', DEF.art5)}
-    ${section('제6조 【물품의 회수 및 반환】','rc-art6', DEF.art6)}
-    ${section('제7조 【임대료】','rc-art7', DEF.art7)}
-    ${section('제8조 【계약의 중도 해지】','rc-art8', DEF.art8)}
-    ${section('제9조 【연체료 및 지연배상금】','rc-art9', DEF.art9)}
-    ${section('제10조 【분쟁의 해결】','rc-art10', DEF.art10)}
+  <div style="margin-top:8px;border-top:1px solid #bbb;padding-top:6px">
+    <div style="font-size:9pt;font-weight:700;background:#dde3f0;border-left:3px solid #1e3a8a;padding:3px 7px;margin-bottom:3px">■ 부가사항</div>
+    <div style="font-size:8.5pt;padding:0 4px">${artLine('rc-extra2',DEF.extra)}</div>
   </div>
-
-  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
-    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:2px">■ 자동이체 약관</div>
-    <div style="padding:1px 6px">${art('rc-auto', DEF.autoTerms)}</div>
-  </div>
-
-  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
-    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:2px">■ 부가사항</div>
-    <div style="padding:1px 6px">${art('rc-extra2', DEF.extra)}</div>
-  </div>
-
-  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
-    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:3px">■ 제11조 【특약사항】</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 6px">
-      <div style="border:1px solid #999;padding:4px 6px;min-height:28px;font-size:8pt">1. ${esc(sp1)}</div>
-      <div style="border:1px solid #999;padding:4px 6px;min-height:28px;font-size:8pt">2. ${esc(sp2)}</div>
+  <div style="margin-top:8px;border-top:1px solid #bbb;padding-top:6px">
+    <div style="font-size:9pt;font-weight:700;background:#dde3f0;border-left:3px solid #1e3a8a;padding:3px 7px;margin-bottom:5px">■ 제11조 【특약사항】</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 4px">
+      <div style="border:1px solid #999;padding:5px 8px;min-height:32px;font-size:8.5pt">1. ${esc(sp1)}</div>
+      <div style="border:1px solid #999;padding:5px 8px;min-height:32px;font-size:8.5pt">2. ${esc(sp2)}</div>
     </div>
   </div>
-
-  <div style="margin-top:8px;border-top:1px solid #333;padding-top:6px;font-size:8pt;text-align:center">
-    이를 증명하기 위해 "갑"과 "을"은 계약서 2통을 작성하여, 각각 서명날인 후 각 1통씩을 보관한다.
+  <div class="v-spacer"></div>
+  <div style="margin-top:10px;border-top:2px solid #1e3a8a;padding-top:8px">
+    <div style="font-size:8.5pt;text-align:center;margin-bottom:8px">
+      이를 증명하기 위해 "갑"과 "을"은 계약서 2통을 작성하여, 각각 서명날인 후 각 1통씩을 보관한다.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div style="border:1px solid #333;padding:12px;text-align:center">
+        <div style="font-size:9pt;font-weight:700;margin-bottom:4px">갑 (임차인)</div>
+        <div style="font-size:8.5pt;color:#555;margin-bottom:16px">${esc(cu.name||'__________________')}</div>
+        <div style="border-top:1px solid #999;padding-top:6px;font-size:8.5pt">
+          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+        </div>
+      </div>
+      <div style="border:1px solid #333;padding:12px;text-align:center">
+        <div style="font-size:9pt;font-weight:700;margin-bottom:4px">을 (임대인)</div>
+        <div style="font-size:8.5pt;color:#555;margin-bottom:16px">${esc(me.name||'한별시스템')}</div>
+        <div style="border-top:1px solid #999;padding-top:6px;font-size:8.5pt">
+          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+        </div>
+      </div>
+    </div>
   </div>
 </div>`;
+
+  return page2a + page2b;
 }
 
 // ── 3페이지: CMS 자동출금 이용신청서 + 약관 + 서명 (통합) ──
@@ -1745,9 +1785,9 @@ function renderRentalPage3() {
     return text.split('\n').filter(l=>l.trim()).map(l=>`<div style="padding:0.5px 0;font-size:7pt;line-height:1.55">${esc(l)}</div>`).join('');
   }
 
-  return `<div class="rental-doc">
+  return `<div class="rental-doc page-fill">
   <div class="page-label">[ 3 / 3 페이지 — CMS 자동출금 이용신청서 ]</div>
-  <div class="rental-outer-box" style="padding:0">
+  <div class="rental-outer-box" style="padding:0;flex:1;display:flex;flex-direction:column">
     <div class="rental-title-bar" style="font-size:11.5pt;letter-spacing:2px;padding:5px">계좌 / 신용카드 &nbsp; 자동출금 &nbsp; 이용신청서</div>
     <div style="text-align:center;font-size:8.5pt;padding:2px 0;border-bottom:1px solid #333">□&nbsp;신규 &nbsp;&nbsp; □&nbsp;변경 &nbsp;&nbsp; □&nbsp;해지</div>
     <div style="font-size:6.5pt;line-height:1.5;padding:3px 6px;border-bottom:1px solid #ccc;background:#fffdf0;color:#444">
@@ -2024,21 +2064,19 @@ function printRentalPage(pageNum) {
   win.document.write(`<!DOCTYPE html><html lang="ko"><head>
     <meta charset="UTF-8"><title>${titles[pageNum]}</title>
     <style>${getRentalDocCSS()}</style>
-    </head><body style="padding:10mm 12mm">${fns[pageNum]()}
+    </head><body style="padding:10mm 12mm;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${fns[pageNum]()}
     <script>window.onload=()=>{window.print()}<\/script>
     </body></html>`);
   win.document.close();
 }
 function printRentalAll() {
   const pages = [renderRentalPage1(), renderRentalPage2(), renderRentalPage3()];
-  const combined = pages.map((p,i) =>
-    `<div class="${i<2?'page-break':''}">${p}</div>`
-  ).join('');
+  const combined = pages.join('');
   const win = window.open('','_blank','width=900,height=700');
   win.document.write(`<!DOCTYPE html><html lang="ko"><head>
     <meta charset="UTF-8"><title>임대계약서 3종</title>
     <style>${getRentalDocCSS()}</style>
-    </head><body style="padding:10mm 12mm">${combined}
+    </head><body style="padding:10mm 12mm;font-family:'Malgun Gothic','맑은 고딕',sans-serif">${combined}
     <script>window.onload=()=>{window.print()}<\/script>
     </body></html>`);
   win.document.close();
