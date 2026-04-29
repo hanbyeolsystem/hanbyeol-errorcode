@@ -648,7 +648,31 @@ body.rental-mode .normal-only{display:none !important}
       </div>
     </div>
 
-    <!-- ===== CMS 약관 편집 (rental-only) ===== -->
+    <!-- ===== 서비스 이용약관 편집 (2페이지) (rental-only) ===== -->
+    <div class="section rental-only">
+      <div class="section-hd" onclick="toggleSection(this)">
+        <span>📋 서비스 이용약관 편집 (2페이지)</span><span class="arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:6px">비워두면 기본 약관이 적용됩니다. 수정 시 직접 입력하세요.</div>
+        <div class="frow c1"><div><label>제1조 (계약의 목적)</label><textarea id="rc-art1" rows="2" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제2조 (계약기간)</label><textarea id="rc-art2" rows="3" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제3조 (물품의 인도/철거)</label><textarea id="rc-art3" rows="4" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제4조 (유지보수)</label><textarea id="rc-art4" rows="4" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제5조 (준수사항)</label><textarea id="rc-art5" rows="4" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제6조 (물품의 회수 및 반환)</label><textarea id="rc-art6" rows="4" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제7조 (임대료)</label><textarea id="rc-art7" rows="5" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제8조 (계약의 중도 해지)</label><textarea id="rc-art8" rows="5" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제9조 (연체료 및 지연배상금)</label><textarea id="rc-art9" rows="3" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제10조 (분쟁의 해결)</label><textarea id="rc-art10" rows="2" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>자동이체 약관</label><textarea id="rc-auto" rows="5" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>부가사항</label><textarea id="rc-extra2" rows="4" oninput="renderAll()" placeholder="기본값 사용"></textarea></div></div>
+        <div class="frow c1"><div><label>제11조 특약사항 1</label><textarea id="rc-special1" rows="2" oninput="renderAll()"></textarea></div></div>
+        <div class="frow c1"><div><label>제11조 특약사항 2</label><textarea id="rc-special2" rows="2" oninput="renderAll()"></textarea></div></div>
+      </div>
+    </div>
+
+    <!-- ===== CMS 약관 편집 (3페이지) (rental-only) ===== -->
     <div class="section rental-only">
       <div class="section-hd" onclick="toggleSection(this)">
         <span>📋 CMS 약관 편집 (3페이지)</span><span class="arrow">▼</span>
@@ -1606,19 +1630,197 @@ function renderRentalPage1() {
 </div>`;
 }
 
-// ── 2페이지: CMS 계좌/신용카드 자동출금 이용신청서 (신청서 상단) ──
+// ── 2페이지: 서비스 이용약관 (복사기 + PC 통합) ──
 function renderRentalPage2() {
+  const me = getMe(), cu = getCust();
+
+  // 기본 약관 텍스트 (비어있으면 사용)
+  const DEF = {
+    art1: `"을" 소유의 컴퓨터(PC) 및 복사기를 "갑"에게 임대하고 "갑"은 이를 임차하여 임대료를 지급할 것을 약정한다.`,
+    art2: `1. 본 임대차의 계약기간은 계약서 표지에서 정한 바에 따른다.\n2. 기간만료 전 1개월 전까지 서면에 의한 계약종료의 의사표시를 하지 않는 한 계약기간은 1년간 자동적으로 갱신된다.`,
+    art3: `1. "갑"은 "을"이 지정하는 장소에서 "을" 또는 "을"이 지정하는 자에게 물품을 인도하기로 하며, 인도 및 철거에 소요되는 제비용(설치비 및 철거비 각 5만원, 등록비(자동이체/업체등록) 10만원)은 약정계약기간을 유지하는 조건으로 갑이 부담하며, 렌탈계약이 중도에 해지되는 경우 약정 면제되었던 제비용은 "을"의 부담으로 전환하며 철거 전 제비용 전액을 납부하여야 한다.\n※ 단, 레이저프린터와 복사기의 인도 및 철거에 소요되는 제비용은 설치비 및 철거비 각 10만원, 등록비 20만원으로 한다.`,
+    art4: `"을" 소유의 물품(PC 및 복사기)을 "갑"에게 임대함에 있어 계약기간 중 물품을 양호한 상태로 유지시키기 위하여 "을"의 책임 하에 다음 각 호의 유지보수와 소모품 및 부품 등을 "갑"에게 공급하는 것을 말한다.\n1. "을"은 렌탈 물품에 대한 보수 및 점검을 실시하여 소모품 및 부품의 교환 또는 수리를 하여 최상의 운용 상태와 충분한 기능을 발휘할 수 있는 상태를 유지한다.\n2. "을"은 복사용지를 제외한 부품 및 소모품을 무상공급 A/S를 한다. 단, 천재지변은 예외로 한다.\n3. 물품의 고장 등 기능 이상 시 "을"은 즉시 사용 가능한 상태로 조치한다.\n4. 유지보수 시간은 "갑"의 근무시간 내로 한다.\n5. PC의 경우, "을"이 제공하는 운영체제(OS) 및 기본 소프트웨어 라이선스 범위 내에서 사용하여야 하며, 임의 소프트웨어 설치로 인한 장애는 유지보수 범위에서 제외된다.`,
+    art5: `1. "갑"은 "을"의 물품에 대해 제3자 등 어떠한 권리도 설정하지 않을 것을 확약한다.\n2. "갑"은 물품을 임의로 개조하거나 제3자에게 대여할 수 없다.\n3. "갑"은 "을"과의 서면합의 없이 임대장소(설치장소)를 변경할 수 없다.\n4. "갑"은 회사 이전 혹은 이사로 인한 이전설치 요구 시 비용이 발생된다.\n5. PC의 경우, "갑"은 무단 소프트웨어 설치·삭제, 하드웨어 임의 변경·업그레이드를 할 수 없다.\n6. "갑"은 바이러스 감염 예방 의무를 지며, 임차인 과실로 인한 데이터 손실 및 장비 손상에 대한 책임은 "갑"이 부담한다.`,
+    art6: `1. "갑"이 물품회수를 요청할 경우, "갑"의 미납요금과 위약금 그리고 추가청구 금액 등의 미납금액이 모두 결제가 완료된 후에 물품을 회수한다. "갑"의 미납금액이 남아있어 "을"의 물품회수가 지연되는 경우, "갑"이 요청한 회수일자와 관계없이 미납금액이 전액 결제완료 될 때까지 본 계약은 지속적으로 유지되며, 그와 관련하여 소요되는 비용 또는 손해는 "갑"이 부담하여야 한다.\n2. 임대 만기 이후 보증금은 고객에게 반환된다.\n3. PC 반환 시 "갑"은 저장된 모든 데이터를 삭제하고 초기화한 상태로 반환하여야 한다. 단, "을"이 직접 초기화하는 경우 초기화 비용이 발생할 수 있다.`,
+    art7: `1. 렌탈계약서에 기재된 약정계약기간 동안 렌탈할 것을 전제로 월 렌탈료를 정한다.\n2. 초기 1회분 입금 이후 렌탈계약서에 표기된 약정일에 "갑"이 지정하는 계좌로부터 "을"의 계좌로 자동이체 한다.\n3. "갑"이 임대료의 지급을 2회 이상 연속하여 연체하였을 때에는 "을"은 사전 최고 없이 이 계약을 해지할 수 있다. 해지통지를 받았을 때 "갑"은 7일 이내에 물품을 "을"에게 반환하여야 하며, "갑"은 연체금액의 연24%에 해당하는 연체료를 "을"에게 지불해야 한다.\n4. 자동이체 미출금 시 매 2일 단위로 재출금을 요청하며 최대 3번까지 청구한다. 지정계좌에 잔액부족 및 기타 사유로 인한 렌탈료 미납 시에는 자동이체약관에 의거하여 처리한다.\n5. 임대료 선금과 추가요금 후불로 처리된다. 자동이체 출금 시 추가된 요금이 자동출금 된다.\n6. "갑"이 위 3항을 진행함과 동시에 개인정보를 제3자에게 제공한다. ①제공받는 자: 채권 추심팀 ②수집항목: 이름, 연락처, 은행명, 계좌번호, 예금주명, 주민번호앞6자리, 카드번호, 카드사, 카드유효기간, 이메일 등 ③보유 및 이용기간: 수집 이용 동의일부터 자동이체서비스 종료일까지, 해지일로부터 5년간 보존 후 파기(관계 법령에 의거)`,
+    art8: `1. "갑"에게 다음 각호의 사유가 발생한 때에 "을"은 사전 최고 없이 계약을 해지할 수 있다.\n   1) 렌탈료의 납부를 2회 이상 연체한 때\n   2) 어음 또는 수표가 부도되어 은행의 거래정지 처분이 있거나 조세공과금의 체납으로 독촉 또는 체납처분을 받은 때\n   3) 사업이 휴업 또는 폐업되거나 회사가 해산한 때 또는 파산, 화의, 정리 등을 신청하거나 기타 신용을 상실한 때\n   4) 물품을 제3자에게 양도, 담보제공, 처분, 임대 또는 점유를 이전한 때\n   5) 이 계약의 내용을 위반하여 "갑"의 구두 또는 서면 최고를 받고도 7일 이내에 시정하지 아니한 때\n2. 계약이 중도 해지되는 경우 위약금은 [남은기간 50% + 설치비 + 철거비 + 등록비]가 청구된다. 중도 해지일이 약정기간 이내인 경우 "을"이 지불한 보증금은 "갑"에게 귀속된다.`,
+    art9: `1. 렌탈료 납부의무 이행을 지연한 경우 "을"의 법무팀 또는 채권팀에서 "갑"의 렌탈료 납부의무 이행을 촉구하기 위하여 계약서에 기재된 연락처로 연락을 취할 수 있다.\n2. "을"이 이 계약에 따라 "갑"에게 이행하여야 할 채무를 불이행할 경우 이행의무가 발생한 날부터 완제하는 날까지 채무액에 대하여 연 24%의 지연 이자를 부가하여 납부하여야 한다.\n3. 전 2항의 연체료 및 지연이자는 따로 일괄하여 일할 계산하되 1년은 365일로 하여 백원미만은 버린다.`,
+    art10: `본 계약과 관련하여 발생하는 모든 분쟁은 "갑"과 "을"이 협의하여 해결한다. 단, 본 계약으로 인한 분쟁이 발생하여 소송이 필요한 경우 주소지 관할법원에 한다.`,
+    autoTerms: `1. 예금주는 렌탈료 납입 약정일을 기준으로 대출금융기관이 지정하는 계좌이체일(휴일인 경우 익일 영업일)에 대출금융기관에서 청구하는 금액을 본인계좌에서 출금하여 납부할 것을 약속합니다.\n2. 자동납부를 위하여 지정계좌의 예금을 출금함에 있어 예금약관이나 약정시의 규정에 불구하고 예금청구나 수표 없이 금융기관이 자동 계좌 이체 절차에 의하여 출금하여도 이의가 없습니다.\n3. 약정일이 동일한 다수의 자동이체 청구가 있는 경우 출금 우선순위는 금융기관 임의로 정하여도 이의가 없습니다.\n4. 본 자동납부 신청에 의한 이체개시일은 대출금융기관의 사정에 의하여 조정될 수 있습니다.\n5. 자동납부신청에 의한 지정계좌에서 출금은 대출금융기관의 청구대로 출금하되 청구금액에 이의가 있을 경우에는 본인의 책임하에 대출금융기관과 직접 협의 조정하겠습니다.\n6. 자동납부금액은 해당 납부일에 정하여진 은행 영업시간 내에 입금된 예금에 한하여 출금 처리되며, 약정일에 지정계좌의 잔고부족 시에는 매 2일 단위로 재출금을 시도합니다.\n7. 미수금은 계약기간이 종료된 후라도 자동이체로 출금 처리됩니다.\n8. 미사용 계좌를 자동이체 신청하여 출금 오류가 2회 이상 반복될 경우 오류에 대한 책임으로써 비용을 청구할 수 있습니다.`,
+    extra: `1. 잉크젯의 경우 월 제공매수(한면)에 해당하는 기본 월 렌탈료는 월납 선불제이며 월 초과출력에 대한 초과 렌탈료는 조회 시점에 일괄 후불 청구되며 모든 렌탈료(기본 월 렌탈료 및 월 초과 렌탈료)는 CMS자동이체 신청해야 합니다.\n2. 잉크젯의 경우 월 제공매수(한면)는 기기변경·교체·A/S 방문 또는 명의변경·재계약이 진행될 경우에 조회되며, 초과출력 발생 시 비용은 일괄 청구됩니다.\n3. 복사기의 경우 매월 자동관리 프로그램으로 월별 관리가 들어가며, 추가요금 발생 시 자동이체로 추가요금이 정산됩니다.\n4. PC의 경우, 운영체제(OS) 라이선스는 정품 소프트웨어로 제공되며, 계약 종료 시 라이선스는 "을"에게 귀속됩니다.\n5. PC 임대의 경우 하드웨어 스펙 변경(업그레이드)이 필요한 경우 별도 비용이 발생하며 "갑"과 "을"이 협의하여 결정한다.`
+  };
+
+  function art(id, def) {
+    const t = val(id) || def;
+    const lines = t.split('\n');
+    const hasNum = lines.some(l => /^\d+[.)]\s/.test(l.trim()));
+    if (!hasNum) return `<p style="font-size:8pt;line-height:1.65;margin:0 0 1px 0">${esc(t).replace(/\n/g,'<br>')}</p>`;
+    return lines.filter(l=>l.trim()).map(l => {
+      if (/^\d+[.)]\s/.test(l.trim())) return `<div style="font-size:8pt;line-height:1.65;padding-left:10px">${esc(l.trim())}</div>`;
+      if (/^[①-⑩]|^※/.test(l.trim())) return `<div style="font-size:7.5pt;line-height:1.55;padding-left:16px;color:#333">${esc(l.trim())}</div>`;
+      return `<div style="font-size:8pt;line-height:1.65">${esc(l.trim())}</div>`;
+    }).join('');
+  }
+
+  function section(title, id, def) {
+    return `<div style="margin-bottom:5px">
+      <div style="font-size:8.5pt;font-weight:700;background:#e8edf5;padding:2px 6px;border-left:3px solid #1e3a8a;margin-bottom:2px">${title}</div>
+      <div style="padding:1px 6px">${art(id, def)}</div>
+    </div>`;
+  }
+
+  const sp1 = val('rc-special1')||'', sp2 = val('rc-special2')||'';
+
+  return `<div class="rental-doc">
+  <div class="page-label">[ 2 / 3 페이지 — 서비스 이용약관 ]</div>
+  <div style="text-align:center;font-size:13pt;font-weight:900;letter-spacing:4px;padding:7px;background:#1e3a8a;color:#fff;margin-bottom:4px">서비스 이용약관</div>
+  <div style="font-size:8.5pt;padding:4px 8px;border:1px solid #ddd;background:#f8f9fa;margin-bottom:6px">
+    <strong>${esc(cu.name||'__________________')}</strong> (이하 "갑"이라 한다)와
+    <strong>${esc(me.name||'한별시스템')}</strong>(이하 "을"이라 한다)은 "을" 소유 컴퓨터(PC) 및 복사기의 임대차계약을 다음과 같이 체결한다.
+  </div>
+
+  <div style="columns:2;column-gap:10px;column-rule:1px solid #ddd">
+    ${section('제1조 【계약의 목적】','rc-art1', DEF.art1)}
+    ${section('제2조 【계약기간】','rc-art2', DEF.art2)}
+    ${section('제3조 【물품의 인도/철거】','rc-art3', DEF.art3)}
+    ${section('제4조 【유지보수】','rc-art4', DEF.art4)}
+    ${section('제5조 【준수사항】','rc-art5', DEF.art5)}
+    ${section('제6조 【물품의 회수 및 반환】','rc-art6', DEF.art6)}
+    ${section('제7조 【임대료】','rc-art7', DEF.art7)}
+    ${section('제8조 【계약의 중도 해지】','rc-art8', DEF.art8)}
+    ${section('제9조 【연체료 및 지연배상금】','rc-art9', DEF.art9)}
+    ${section('제10조 【분쟁의 해결】','rc-art10', DEF.art10)}
+  </div>
+
+  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
+    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:2px">■ 자동이체 약관</div>
+    <div style="padding:1px 6px">${art('rc-auto', DEF.autoTerms)}</div>
+  </div>
+
+  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
+    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:2px">■ 부가사항</div>
+    <div style="padding:1px 6px">${art('rc-extra2', DEF.extra)}</div>
+  </div>
+
+  <div style="margin-top:5px;border-top:1px solid #ccc;padding-top:4px">
+    <div style="font-size:8.5pt;font-weight:700;background:#dde3f0;padding:2px 6px;margin-bottom:3px">■ 제11조 【특약사항】</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 6px">
+      <div style="border:1px solid #999;padding:4px 6px;min-height:28px;font-size:8pt">1. ${esc(sp1)}</div>
+      <div style="border:1px solid #999;padding:4px 6px;min-height:28px;font-size:8pt">2. ${esc(sp2)}</div>
+    </div>
+  </div>
+
+  <div style="margin-top:8px;border-top:1px solid #333;padding-top:6px;font-size:8pt;text-align:center">
+    이를 증명하기 위해 "갑"과 "을"은 계약서 2통을 작성하여, 각각 서명날인 후 각 1통씩을 보관한다.
+  </div>
+</div>`;
+}
+
+// ── 3페이지: CMS 자동출금 이용신청서 + 약관 + 서명 (통합) ──
+function renderRentalPage3() {
   const me = getMe(), cu = getCust();
   const c = calcRentalTotal();
   const debitAmt = numVal('r-debitAmt') || c.total;
   const isCard = val('r-payMethod') === 'card';
-  const bankMemo = val('r-bankMemo') || esc(me.name||'한별시스템');
+  const bankMemo = val('r-bankMemo') || (me.name||'한별시스템');
 
   // 이체개시일: r-period 에서 시작월 추출
   let startDate = '';
   const period = val('r-period') || '';
   const pm = period.match(/(\d{4})[.\-\/년]?\s*(\d{1,2})/);
   if (pm) startDate = pm[1] + '년 ' + pm[2] + '월';
+
+  // CMS 약관 기본값
+  const defTerms = `1. 이용자는 본 신청서에 서명하거나 공인인증 및 그에 준하는 전자 인증절차를 통함으로써 본 서비스를 이용할 수 있습니다.\n2. 회사는 서비스 제공을 위하여 이용자가 제출한 지급결제수단 정보를 해당 금융기관(통신사 포함)에 제공할 수 있습니다.\n3. 자동이체 개시일을 이용자가 지정하지 않은 경우 납기일을 최초 개시일로 하며, 출금은 이용업체와 협의한 날짜에 이루어 집니다.\n4. 출금이체 금액은 해당 지정 출금일 영업 시간 내에 입금된 예금에 한하여 출금 처리 되며, 이의가 있는 경우 이용업체에 협의하여 조정합니다.\n5. 납기일에 동일한 수종의 자동이체 청구가 있는 경우 이체 우선 순위는 이용자의 거래 금융기관이 정하는 바에 따릅니다.\n6. 자동이체 납부일이 영업일이 아닌 경우에는 다음 영업일을 납부일로 합니다.\n7. 이용자가 자동이체 신청(신규·해지·변경)을 원하는 경우 납기일 30일 전까지 회사에 통지해야 합니다.\n8. 지급결제수단의 잔액 부족이나 지급제한·연체 등 납부자의 과실에 의해 발생하는 손해의 책임은 이용자에게 있습니다.\n9. 금융기관 및 회사가 정하는 기간 동안 자동이체 이용 실적이 없는 경우 사전 통지 후 자동이체를 해지할 수 있습니다.\n10. 회사는 자동이체서비스 이용과 관련된 구체적인 권리·의무를 정하기 위하여 본 약관과 별도로 이용약관을 제정할 수 있습니다.`;
+  const defPi = `1. 수집·이용목적: ${me.name||'한별시스템'} 자동이체서비스를 통한 요금 수납, 민원처리 및 상담응답\n2. 수집항목: 성명, 전화번호, 휴대폰번호, 은행명, 계좌번호, 예금주명, 주민번호앞6자리, 카드번호, 카드사, 카드유효기간, 이메일\n3. 보유·이용기간: 수집 동의일부터 자동이체서비스 종료일(해지일)까지며, 해지일로부터 5년간 보존 후 파기(관계 법령에 의거)\n4. 신청자는 개인정보 수집·이용을 거부할 수 있습니다. 단, 거부 시 자동이체서비스 신청이 처리되지 않습니다.`;
+  const defDelegate = `1. 결제(자동이체)서비스를 통한 요금 수납, 관련 민원처리 및 상담응답을 위하여 개인정보 취급 업무를 위탁·운영하고 있습니다.\n2. 위탁 계약 시 개인정보보호를 위해 위탁업무 목적 외 처리 금지, 기술적·관리적 보호조치 등 안전성 확보 조치에 관한 사항을 서면 보관합니다.\n3. 위탁 업체가 변경될 경우, 변경된 업체 명을 홈페이지·SMS·전자우편·서면 등으로 공개합니다.`;
+  const defSms = `1. 자동이체 동의 및 처리결과 안내(휴대폰 문자전송) 송부에 동의합니다.`;
+
+  const termsText    = val('cms-terms')    || defTerms;
+  const piText       = val('cms-pi')       || defPi;
+  const delegateText = val('cms-delegate') || defDelegate;
+  const smsText      = val('cms-sms')      || defSms;
+
+  function tb(text) {
+    return text.split('\n').filter(l=>l.trim()).map(l=>`<div style="padding:0.5px 0;font-size:7pt;line-height:1.55">${esc(l)}</div>`).join('');
+  }
+
+  return `<div class="rental-doc">
+  <div class="page-label">[ 3 / 3 페이지 — CMS 자동출금 이용신청서 ]</div>
+  <div class="rental-outer-box" style="padding:0">
+    <div class="rental-title-bar" style="font-size:11.5pt;letter-spacing:2px;padding:5px">계좌 / 신용카드 &nbsp; 자동출금 &nbsp; 이용신청서</div>
+    <div style="text-align:center;font-size:8.5pt;padding:2px 0;border-bottom:1px solid #333">□&nbsp;신규 &nbsp;&nbsp; □&nbsp;변경 &nbsp;&nbsp; □&nbsp;해지</div>
+    <div style="font-size:6.5pt;line-height:1.5;padding:3px 6px;border-bottom:1px solid #ccc;background:#fffdf0;color:#444">
+      ※ 전자금융거래법 관련 규정(시행령 10조)에 의거, 자동이체 신청시 반드시 서면/공인인증서/녹취를 통한 예금주/카드주/휴대폰명의자 본인 동의가 필요합니다. ※ 신용카드 이용시 카드이용내역서상 결제대행기관 명으로 청구될 수 있으며, 계좌출금시 통장기재내역으로 6자 이내 표시됩니다.
+    </div>
+
+    <div class="cms-section-title" style="font-size:8pt;padding:2px 6px">◈ 수납기관 및 요금정보</div>
+    <table class="cms-table" style="font-size:7.5pt">
+      <thead><tr><th>수납기관명</th><th>자동이체사유</th><th>금액</th><th>비고(통장기재내역)</th></tr></thead>
+      <tbody><tr>
+        <td style="text-align:center">${esc(me.name||'한별시스템')}</td>
+        <td style="text-align:center">프린터 임대료</td>
+        <td style="text-align:right">${fmt(debitAmt)} 원</td>
+        <td>${esc(bankMemo)}</td>
+      </tr></tbody>
+    </table>
+
+    <div class="cms-section-title" style="font-size:8pt;padding:2px 6px">◈ 납부자 정보</div>
+    <table class="cms-table" style="font-size:7.5pt">
+      <tbody><tr>
+        <td class="cms-label" style="width:26%">납부자 번호(고객번호)</td><td>${esc(cu.reg||'')}</td>
+        <td class="cms-label" style="width:14%">이체개시</td><td style="width:16%">${startDate}</td>
+        <td class="cms-label" style="width:14%">지정 출금일</td><td>매월 <strong>${esc(val('r-debitDay')||'___')}</strong> 일</td>
+      </tr></tbody>
+    </table>
+
+    <div class="cms-section-title" style="font-size:8pt;padding:2px 6px">◈ 신청인 정보</div>
+    <table class="cms-table" style="font-size:7.5pt">
+      <tbody>
+        <tr><td class="cms-label" style="width:22%">신청인 성명</td><td>${esc(val('r-person')||cu.ceo||'')}</td><td class="cms-label" style="width:14%">이메일</td><td>${esc(cu.email||'')}</td></tr>
+        <tr><td class="cms-label">주소</td><td colspan="3">${esc(cu.addr||'')}</td></tr>
+        <tr><td class="cms-label">연락처</td><td>${esc(cu.tel||'')}</td><td class="cms-label">휴대폰번호</td><td>${esc(val('r-mobile')||'')}</td></tr>
+        <tr><td class="cms-label">결제수단</td><td colspan="3">${isCard?'□ 계좌(CMS) &nbsp; ☑ 신용카드':'☑ 계좌(CMS) &nbsp; □ 신용카드'} &nbsp;<span style="font-size:6.5pt;color:#666">*평생계좌번호 이용 불가</span></td></tr>
+        <tr><td class="cms-label">은행명/카드사</td><td>${esc(val('r-bank')||'')}</td><td class="cms-label">사업자번호</td><td>${esc(cu.reg||'')}</td></tr>
+        <tr><td class="cms-label">예금주/카드주</td><td>${esc(val('r-holder')||'')}</td><td class="cms-label">계좌/카드번호</td><td>${esc(val('r-account')||'')}</td></tr>
+        <tr><td class="cms-label">주민번호앞6자리</td><td>${esc(val('r-resid')||'')} - *******</td><td class="cms-label">카드유효기간<br><span style="font-size:6.5pt;font-weight:400">(월/년)*카드선택시</span></td><td>${esc(val('r-cardExp')||'/')}</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:6.5pt;color:#555;padding:2px 6px;border:1px solid #ccc;border-top:none">※ 법인공용카드·선불카드·해외발행카드 등 일부 카드 이용 불가 &nbsp;|&nbsp; ※ 연체·잔액부족 등으로 납부 지연이 발생하지 않도록 유의하십시오.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:4px">
+      <div>
+        <div class="cms-consent-title" style="font-size:7.5pt;padding:2px 6px">■ 자동이체 서비스 이용 약관</div>
+        <div style="padding:2px 6px">${tb(termsText)}</div>
+        <div class="cms-consent-title" style="font-size:7.5pt;padding:2px 6px;margin-top:3px">■ 개인정보 수집 및 이용동의</div>
+        <div style="padding:2px 6px">${tb(piText)}</div>
+      </div>
+      <div style="border-left:1px solid #ccc;padding-left:4px">
+        <div class="cms-consent-title" style="font-size:7.5pt;padding:2px 6px">■ 개인정보 취급 위탁</div>
+        <div style="padding:2px 6px">${tb(delegateText)}</div>
+        <div class="cms-consent-title" style="font-size:7.5pt;padding:2px 6px;margin-top:3px">■ 문자(SMS)발송 동의</div>
+        <div style="padding:2px 6px">${tb(smsText)}</div>
+        <div style="font-size:6.5pt;line-height:1.55;padding:4px 6px;border:1px solid #ddd;background:#fffdf0;margin-top:3px">
+          상기 자동이체 신청과 관련하여 계좌예금주/카드주로서 자동이체 서비스 이용약관과 개인정보 수집·이용동의, 개인정보 취급 위탁에 동의, 문자(SMS)발송에 동의하며 자동출금이체서비스를 신청합니다.
+        </div>
+        <div style="font-size:8.5pt;font-weight:600;margin:6px 6px 4px">20&nbsp;&nbsp; 년 &nbsp; 월 &nbsp; 일</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 6px">
+          <div style="border:1px solid #333;padding:5px">
+            <div style="font-size:7.5pt;font-weight:700;margin-bottom:2px">예금주 / 카드주</div>
+            <div style="height:22px"></div>
+            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-holder')||'________')} &nbsp;(인)</div>
+          </div>
+          <div style="border:1px solid #333;padding:5px">
+            <div style="font-size:7.5pt;font-weight:700;margin-bottom:2px">신청인</div>
+            <div style="height:22px"></div>
+            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-person')||cu.ceo||'________')} &nbsp;(인)</div>
+          </div>
+        </div>
+        <div style="font-size:6pt;color:#666;margin:3px 6px">*신청인과 예금주/카드주가 상이한 경우 예금주/카드주의 동의 필요</div>
+      </div>
+    </div>
+  </div>
+</div>`;
 
   return `<div class="rental-doc">
   <div class="page-label">[ 2 / 3 페이지 — CMS 자동출금 이용신청서 ]</div>
@@ -1714,8 +1916,8 @@ function renderRentalPage2() {
 </div>`;
 }
 
-// ── 3페이지: CMS 자동이체 서비스 이용 약관 + 개인정보 동의 + 서명 ──
-function renderRentalPage3() {
+// ── 중복 제거 (이 함수는 위에서 이미 정의됨) ──
+function renderRentalPage3_REMOVED() {
   const me = getMe(), cu = getCust();
   const debitAmt = numVal('r-debitAmt') || calcRentalTotal().total;
 
@@ -1881,7 +2083,12 @@ function saveTransaction() {
     rt1: val('rt1'), rt2: val('rt2'), rt3: val('rt3'), rt4: val('rt4'), rt5: val('rt5'),
     re1: val('re1'), re2: val('re2'), re3: val('re3'), re4: val('re4'),
     cmsTerms: val('cms-terms'), cmsPi: val('cms-pi'),
-    cmsDelegate: val('cms-delegate'), cmsSms: val('cms-sms')
+    cmsDelegate: val('cms-delegate'), cmsSms: val('cms-sms'),
+    rcArt1: val('rc-art1'), rcArt2: val('rc-art2'), rcArt3: val('rc-art3'),
+    rcArt4: val('rc-art4'), rcArt5: val('rc-art5'), rcArt6: val('rc-art6'),
+    rcArt7: val('rc-art7'), rcArt8: val('rc-art8'), rcArt9: val('rc-art9'),
+    rcArt10: val('rc-art10'), rcAuto: val('rc-auto'), rcExtra2: val('rc-extra2'),
+    rcSpecial1: val('rc-special1'), rcSpecial2: val('rc-special2')
   };
   let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
   // 같은 docNum 있으면 덮어쓰기
@@ -1950,7 +2157,13 @@ function loadTransaction(id) {
     'rPayMethod','rBankMemo','rCardExp'];
   rFields.forEach((fid,i) => { if($(fid)) $(fid).value = t[rKeys[i]]||''; });
   ['rt1','rt2','rt3','rt4','rt5','re1','re2','re3','re4'].forEach(k => { if($(k)) $(k).value = t[k]||''; });
-  const cmsMap = {'cms-terms':'cmsTerms','cms-pi':'cmsPi','cms-delegate':'cmsDelegate','cms-sms':'cmsSms'};
+  const cmsMap = {
+    'cms-terms':'cmsTerms','cms-pi':'cmsPi','cms-delegate':'cmsDelegate','cms-sms':'cmsSms',
+    'rc-art1':'rcArt1','rc-art2':'rcArt2','rc-art3':'rcArt3','rc-art4':'rcArt4',
+    'rc-art5':'rcArt5','rc-art6':'rcArt6','rc-art7':'rcArt7','rc-art8':'rcArt8',
+    'rc-art9':'rcArt9','rc-art10':'rcArt10','rc-auto':'rcAuto','rc-extra2':'rcExtra2',
+    'rc-special1':'rcSpecial1','rc-special2':'rcSpecial2'
+  };
   Object.entries(cmsMap).forEach(([fid,key]) => { if($(fid)) $(fid).value = t[key]||''; });
   // 저장 당시 탭으로 전환
   if (t.docType) {
