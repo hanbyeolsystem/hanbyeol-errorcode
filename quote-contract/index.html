@@ -324,6 +324,88 @@ body.rental-mode .normal-only{display:none !important}
 .page-separator{border:none;border-top:3px dashed #ccd;margin:24px 0;position:relative}
 .page-separator::after{content:'▼ 다음 페이지';position:absolute;left:50%;transform:translateX(-50%);top:-8px;background:#f1f5f9;padding:0 8px;font-size:11px;color:#94a3b8}
 
+/* ===== RESPONSIVE (B안: 모바일/태블릿) ===== */
+
+/* 태블릿 (≤ 1023px) — 좌측 패널 슬림화 + 헤더 텍스트 줄임 */
+@media (max-width: 1023px) {
+  .left-panel{width:300px}
+  .hd-logo{font-size:14px}
+  .hd-sub,.hd-sep{display:none}
+  .hd-btn{padding:5px 9px;font-size:11px}
+  .doc-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .doc-tab{flex-shrink:0}
+  .preview-area{padding:14px}
+}
+
+/* 모바일 (≤ 767px) — 위·아래 스택, 헤더 자동 높이, 가로스크롤 허용 */
+@media (max-width: 767px) {
+  body{font-size:13px}
+  /* 헤더: sticky + flex-wrap 으로 자동 높이 */
+  header{
+    position:sticky;top:0;height:auto;
+    flex-wrap:wrap;padding:8px 10px;gap:6px
+  }
+  .hd-logo{font-size:13px}
+  .hd-btns{
+    width:100%;margin-left:0;gap:4px;
+    display:grid;grid-template-columns:repeat(3,1fr)
+  }
+  .hd-btn{
+    padding:7px 6px;font-size:10.5px;width:100%;
+    text-align:center;white-space:normal;line-height:1.25
+  }
+  /* 레이아웃: 세로 스택 */
+  .layout{
+    flex-direction:column;height:auto;min-height:auto;
+    margin-top:0;overflow:visible
+  }
+  .left-panel{
+    width:100%;flex-shrink:1;overflow:visible;
+    border-right:none;border-bottom:3px solid var(--blue-d)
+  }
+  .right-panel{
+    width:100%;overflow:visible;min-height:60vh
+  }
+  /* 탭: 가로 스크롤 */
+  .doc-tabs{padding:8px 10px 0;gap:3px}
+  .doc-tab{padding:7px 12px;font-size:12px}
+  /* 미리보기 영역: 자체 스크롤 끄고 본문 흐름에 맡김 + 가로스크롤 허용 */
+  .preview-area{flex:none;overflow-y:visible;overflow-x:auto;padding:10px}
+  .preview-wrap{overflow:auto;border-radius:6px}
+  .preview-bar{padding:6px 10px;font-size:11px}
+  .doc-num-input{padding:6px 10px}
+  .doc-num-input input{flex:1}
+  /* 미리보기 안 콘텐츠 너비 제한 */
+  #docPreview{min-width:0}
+  /* 액션바: 줄바꿈 허용 */
+  .action-bar{
+    flex-wrap:wrap;padding:8px 10px;gap:6px;
+    position:sticky;bottom:0;z-index:50
+  }
+  .action-bar .sep{display:none}
+  .action-bar .btn{font-size:11px;padding:7px 10px;flex:1 1 auto;min-width:46%}
+  /* 모달 */
+  .modal{width:96%;max-width:96%;max-height:92vh}
+  .modal-body{padding:12px}
+  .modal-hd{padding:10px 14px}
+  .modal-hd h2{font-size:14px}
+  /* 표 스크롤 */
+  .items-wrap,.items-tbl,.ri-tbl{font-size:10.5px}
+  /* 폼 입력 */
+  .frow.c2,.frow.c3{grid-template-columns:1fr}
+  .section-hd{padding:11px 12px;font-size:12px}
+  .section-body{padding:12px}
+  /* 견적/계약 미리보기 본문 안의 그리드 */
+  .doc-parties{grid-template-columns:1fr;gap:8px}
+  .cond-grid{grid-template-columns:1fr}
+}
+
+/* 좁은 모바일 (≤ 380px) — 헤더 버튼 더 압축 */
+@media (max-width: 380px) {
+  .hd-btns{grid-template-columns:repeat(2,1fr)}
+  .hd-btn{font-size:10px;padding:6px 4px}
+}
+
 /* ===== PRINT ===== */
 @media print{
   body *{visibility:hidden}
@@ -395,7 +477,7 @@ body.rental-mode .normal-only{display:none !important}
 <header>
   <div class="hd-logo">📄 한별시스템</div>
   <span class="hd-sep">|</span>
-  <span style="font-size:12px;opacity:.7">문서 발행 시스템</span>
+  <span class="hd-sub" style="font-size:12px;opacity:.7">문서 발행 시스템</span>
   <div class="hd-btns">
     <button class="hd-btn" onclick="openModal('modalCompany')">⚙️ 내 회사 설정</button>
     <button class="hd-btn" onclick="openHistory()">📂 거래 불러오기</button>
