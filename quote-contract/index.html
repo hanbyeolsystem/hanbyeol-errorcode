@@ -418,23 +418,34 @@ body.rental-mode .normal-only{display:none !important}
 
 <!-- ===== MODALS ===== -->
 
-<!-- 내 회사 정보 설정 -->
+<!-- 내 회사 정보 설정 (다중 사업자 지원) -->
 <div class="modal-bg" id="modalCompany">
-  <div class="modal">
-    <div class="modal-hd"><h2>⚙️ 내 회사 정보 설정</h2><button class="modal-close" onclick="closeModal('modalCompany')">✕</button></div>
+  <div class="modal" style="max-width:640px">
+    <div class="modal-hd">
+      <h2>⚙️ 내 회사 정보 설정 <span id="mc-activeBadge" style="font-size:11px;color:#cbd5e1;font-weight:400;margin-left:6px"></span></h2>
+      <button class="modal-close" onclick="closeModal('modalCompany')">✕</button>
+    </div>
     <div class="modal-body">
-      <div class="notice">저장하면 모든 문서에 자동으로 채워집니다.</div>
-      <div class="frow c2"><div><label>회사명</label><input type="text" id="mc-name" placeholder="한별시스템"></div><div><label>사업자번호</label><input type="text" id="mc-reg" placeholder="000-00-00000"></div></div>
-      <div class="frow c2"><div><label>대표자</label><input type="text" id="mc-ceo" placeholder="대표자명"></div><div><label>업태</label><input type="text" id="mc-biz" placeholder="서비스업"></div></div>
-      <div class="frow c2"><div><label>종목</label><input type="text" id="mc-item" placeholder="IT솔루션,유지보수"></div><div><label>이메일</label><input type="text" id="mc-email" placeholder="info@hanbyeol.co.kr"></div></div>
+      <div class="notice">사업자가 여러 개면 모두 등록해두고, 문서 작성 시 사용할 회사를 선택하세요.</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;padding:8px;background:#f1f5f9;border-radius:6px">
+        <label style="font-size:11px;color:var(--gray);white-space:nowrap;margin-right:2px">저장된 회사</label>
+        <select id="mc-select" onchange="selectMyCompany()" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;background:#fff">
+          <option value="">— 신규 등록 —</option>
+        </select>
+        <button class="btn btn-sm btn-gray" onclick="newMyCompany()" title="새 회사 입력 폼">＋ 신규</button>
+        <button class="btn btn-sm btn-red" onclick="deleteMyCompany()" title="선택한 회사 삭제">🗑 삭제</button>
+      </div>
+      <div class="frow c2"><div><label>표시명 (드롭다운에 보이는 이름)</label><input type="text" id="mc-displayName" placeholder="회사명과 동일하게 두면 자동 사용"></div><div><label>회사명</label><input type="text" id="mc-name" placeholder="한별시스템"></div></div>
+      <div class="frow c2"><div><label>사업자번호</label><input type="text" id="mc-reg" placeholder="000-00-00000"></div><div><label>대표자</label><input type="text" id="mc-ceo" placeholder="대표자명"></div></div>
+      <div class="frow c2"><div><label>업태</label><input type="text" id="mc-biz" placeholder="서비스업"></div><div><label>종목</label><input type="text" id="mc-item" placeholder="IT솔루션,유지보수"></div></div>
       <div class="frow c1"><div><label>사업장 주소</label><input type="text" id="mc-addr" placeholder="주소 입력"></div></div>
       <div class="frow c2"><div><label>전화</label><input type="text" id="mc-tel" placeholder="02-0000-0000"></div><div><label>팩스</label><input type="text" id="mc-fax" placeholder="02-0000-0001"></div></div>
-      <div class="frow c2"><div><label>계좌은행</label><input type="text" id="mc-bank" placeholder="국민은행"></div><div><label>계좌번호</label><input type="text" id="mc-account" placeholder="000-00-0000000"></div></div>
-      <div class="frow c1"><div><label>계좌 예금주</label><input type="text" id="mc-holder" placeholder="한별시스템"></div></div>
+      <div class="frow c2"><div><label>이메일</label><input type="text" id="mc-email" placeholder="info@hanbyeol.co.kr"></div><div><label>계좌은행</label><input type="text" id="mc-bank" placeholder="국민은행"></div></div>
+      <div class="frow c2"><div><label>계좌번호</label><input type="text" id="mc-account" placeholder="000-00-0000000"></div><div><label>계좌 예금주</label><input type="text" id="mc-holder" placeholder="한별시스템"></div></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray" onclick="closeModal('modalCompany')">취소</button>
-      <button class="btn btn-blue" onclick="saveMyCompany()">💾 저장</button>
+      <button class="btn btn-gray" onclick="closeModal('modalCompany')">닫기</button>
+      <button class="btn btn-blue" onclick="saveMyCompany()">💾 저장하고 활성으로</button>
     </div>
   </div>
 </div>
@@ -828,7 +839,9 @@ body.rental-mode .normal-only{display:none !important}
 // =============================================
 // STORAGE KEYS
 // =============================================
-const KEY_COMPANY = 'hbs_company';
+const KEY_COMPANY = 'hbs_company';            // legacy (단일 객체) — 자동 마이그레이션
+const KEY_COMPANIES = 'hbs_companies';        // 신규 (배열, 다중 사업자)
+const KEY_COMPANY_ACTIVE = 'hbs_company_active'; // 활성 회사 인덱스
 const KEY_CUSTOMERS = 'hbs_customers';
 const KEY_TRANSACTIONS = 'hbs_transactions';
 const KEY_DOCNUM = 'hbs_docnum';
@@ -931,6 +944,8 @@ async function changeDataFolder() {
 let items = [];
 let currentTab = 'quote';
 let myCompany = {};
+let companies = [];
+let companyActiveIdx = 0;
 let customers = [];
 
 // =============================================
@@ -972,26 +987,125 @@ function autoDocNum() {
 // =============================================
 // MY COMPANY
 // =============================================
-function loadMyCompany() {
-  myCompany = JSON.parse(localStorage.getItem(KEY_COMPANY)||'{}');
-  const defaults = { name:'한별시스템', reg:'', ceo:'', biz:'', item:'', addr:'', tel:'', fax:'', email:'', bank:'', account:'', holder:'' };
-  myCompany = Object.assign(defaults, myCompany);
-  // 모달 필드에 채우기
-  ['name','reg','ceo','biz','item','addr','tel','fax','email','bank','account','holder'].forEach(k => {
-    const el = $('mc-'+k); if(el) el.value = myCompany[k]||'';
-  });
+const _MC_FIELDS = ['displayName','name','reg','ceo','biz','item','addr','tel','fax','email','bank','account','holder'];
+const _MC_DEFAULTS = { displayName:'', name:'', reg:'', ceo:'', biz:'', item:'', addr:'', tel:'', fax:'', email:'', bank:'', account:'', holder:'' };
+
+function _readCompanyForm() {
+  const o = {};
+  _MC_FIELDS.forEach(k => { o[k] = val('mc-'+k) || ''; });
+  if (!o.displayName) o.displayName = o.name; // 표시명 비어있으면 회사명 사용
+  return o;
 }
+function _writeCompanyForm(c) {
+  const o = Object.assign({}, _MC_DEFAULTS, c||{});
+  _MC_FIELDS.forEach(k => { const el = $('mc-'+k); if (el) el.value = o[k]||''; });
+}
+function _refreshCompanySelect() {
+  const sel = $('mc-select'); if (!sel) return;
+  sel.innerHTML = '<option value="">— 신규 등록 —</option>';
+  companies.forEach((c,i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = (c.displayName||c.name||'(이름없음)') + (i===companyActiveIdx ? '  ✓ 활성' : '');
+    sel.appendChild(opt);
+  });
+  sel.value = String(companyActiveIdx);
+  // 활성 배지
+  const badge = $('mc-activeBadge');
+  if (badge) badge.textContent = companies.length ? '(활성: ' + (companies[companyActiveIdx]?.displayName||companies[companyActiveIdx]?.name||'-') + ')' : '';
+}
+
+function loadMyCompany() {
+  // 1) 신규 키에서 로드
+  const raw = localStorage.getItem(KEY_COMPANIES);
+  if (raw) {
+    try { companies = JSON.parse(raw) || []; } catch { companies = []; }
+  } else {
+    // 2) legacy 단일 객체에서 마이그레이션
+    const oldRaw = localStorage.getItem(KEY_COMPANY);
+    if (oldRaw) {
+      try {
+        const old = JSON.parse(oldRaw);
+        if (old && (old.name||old.reg)) {
+          old.displayName = old.displayName || old.name || '내 회사';
+          companies = [old];
+          localStorage.setItem(KEY_COMPANIES, JSON.stringify(companies));
+        }
+      } catch {}
+    }
+  }
+  // 3) 비어있으면 기본 1개 자동 생성
+  if (!companies.length) {
+    companies = [Object.assign({}, _MC_DEFAULTS, { name:'한별시스템', displayName:'한별시스템' })];
+    localStorage.setItem(KEY_COMPANIES, JSON.stringify(companies));
+  }
+  // 4) 활성 인덱스 복원
+  const ai = parseInt(localStorage.getItem(KEY_COMPANY_ACTIVE)||'0', 10);
+  companyActiveIdx = (ai >= 0 && ai < companies.length) ? ai : 0;
+  myCompany = Object.assign({}, _MC_DEFAULTS, companies[companyActiveIdx]||{});
+  // 5) 모달 채우기
+  _writeCompanyForm(myCompany);
+  _refreshCompanySelect();
+}
+
+function selectMyCompany() {
+  const sel = $('mc-select'); if (!sel) return;
+  const v = sel.value;
+  if (v === '') { newMyCompany(); return; }
+  const idx = parseInt(v, 10);
+  if (isNaN(idx) || !companies[idx]) return;
+  _writeCompanyForm(companies[idx]);
+}
+
+function newMyCompany() {
+  const sel = $('mc-select'); if (sel) sel.value = '';
+  _writeCompanyForm({});
+  const nameEl = $('mc-name'); if (nameEl) nameEl.focus();
+}
+
 function saveMyCompany() {
-  myCompany = {
-    name: val('mc-name'), reg: val('mc-reg'), ceo: val('mc-ceo'),
-    biz: val('mc-biz'), item: val('mc-item'), addr: val('mc-addr'),
-    tel: val('mc-tel'), fax: val('mc-fax'), email: val('mc-email'),
-    bank: val('mc-bank'), account: val('mc-account'), holder: val('mc-holder')
-  };
+  const obj = _readCompanyForm();
+  if (!obj.name && !obj.reg) { showToast('회사명 또는 사업자번호를 입력하세요.'); return; }
+  const sel = $('mc-select');
+  const cur = sel ? sel.value : '';
+  let idx;
+  if (cur === '') {
+    companies.push(obj);
+    idx = companies.length - 1;
+  } else {
+    idx = parseInt(cur, 10);
+    companies[idx] = obj;
+  }
+  companyActiveIdx = idx;
+  myCompany = Object.assign({}, _MC_DEFAULTS, obj);
+  localStorage.setItem(KEY_COMPANIES, JSON.stringify(companies));
+  localStorage.setItem(KEY_COMPANY_ACTIVE, String(companyActiveIdx));
+  // legacy 키도 활성 회사로 동기화 (혹시 다른 곳에서 읽을 경우 대비)
   localStorage.setItem(KEY_COMPANY, JSON.stringify(myCompany));
-  closeModal('modalCompany');
+  _refreshCompanySelect();
   renderAll();
-  showToast('내 회사 정보가 저장되었습니다.');
+  showToast('💾 ' + (obj.displayName||obj.name) + ' 저장 + 활성으로 전환됨');
+}
+
+function deleteMyCompany() {
+  const sel = $('mc-select'); if (!sel) return;
+  const cur = sel.value;
+  if (cur === '') { showToast('삭제할 회사를 먼저 선택하세요.'); return; }
+  const idx = parseInt(cur, 10);
+  if (!companies[idx]) return;
+  if (companies.length <= 1) { alert('최소 1개의 회사 정보는 남아있어야 합니다.'); return; }
+  if (!confirm(`"${companies[idx].displayName||companies[idx].name}" 회사를 삭제하시겠습니까?`)) return;
+  companies.splice(idx, 1);
+  if (companyActiveIdx >= companies.length) companyActiveIdx = companies.length - 1;
+  if (companyActiveIdx < 0) companyActiveIdx = 0;
+  myCompany = Object.assign({}, _MC_DEFAULTS, companies[companyActiveIdx]||{});
+  localStorage.setItem(KEY_COMPANIES, JSON.stringify(companies));
+  localStorage.setItem(KEY_COMPANY_ACTIVE, String(companyActiveIdx));
+  localStorage.setItem(KEY_COMPANY, JSON.stringify(myCompany));
+  _writeCompanyForm(myCompany);
+  _refreshCompanySelect();
+  renderAll();
+  showToast('🗑 삭제됨');
 }
 
 // =============================================
