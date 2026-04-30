@@ -374,9 +374,17 @@ body.rental-mode .normal-only{display:none !important}
 
 <!-- 거래 내역 불러오기 -->
 <div class="modal-bg" id="modalHistory">
-  <div class="modal">
+  <div class="modal" style="max-width:680px">
     <div class="modal-hd"><h2>📂 저장된 거래 불러오기</h2><button class="modal-close" onclick="closeModal('modalHistory')">✕</button></div>
-    <div class="modal-body" id="historyList"></div>
+    <div style="padding:12px 18px 4px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--border);background:#f8fafc">
+      <input type="text" id="historySearch" placeholder="🔍 거래처명·문서번호·사업자번호·주소·대표자명 등으로 검색"
+             oninput="renderHistory()" autocomplete="off"
+             style="flex:1;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">
+      <button class="btn btn-sm btn-gray" onclick="changeDataFolder()" title="저장 폴더 변경/지정">📁 폴더</button>
+      <button class="btn btn-sm btn-gray" onclick="openHistory()" title="다시 불러오기">🔄</button>
+    </div>
+    <div id="historyFolderInfo" style="padding:6px 18px 0;font-size:11px;color:#64748b"></div>
+    <div class="modal-body" id="historyList" style="min-height:200px;max-height:60vh;overflow-y:auto"></div>
     <div class="modal-footer">
       <button class="btn btn-gray" onclick="closeModal('modalHistory')">닫기</button>
     </div>
@@ -742,6 +750,98 @@ const KEY_COMPANY = 'hbs_company';
 const KEY_CUSTOMERS = 'hbs_customers';
 const KEY_TRANSACTIONS = 'hbs_transactions';
 const KEY_DOCNUM = 'hbs_docnum';
+
+// =============================================
+// DATA FOLDER (File System Access API)
+// =============================================
+let dataDirHandle = null;
+let _historyCache = [];
+
+const _IDB_NAME = 'hbs-doc-store';
+const _IDB_STORE = 'handles';
+function _idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(_IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbGet(key) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const r = db.transaction(_IDB_STORE, 'readonly').objectStore(_IDB_STORE).get(key);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function _idbSet(key, val) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const r = db.transaction(_IDB_STORE, 'readwrite').objectStore(_IDB_STORE).put(val, key);
+    r.onsuccess = () => resolve();
+    r.onerror = () => reject(r.error);
+  });
+}
+
+function _fsApiSupported() { return typeof window.showDirectoryPicker === 'function'; }
+function _sanitize(s) { return String(s||'').replace(/[\\\/:*?"<>|]/g,'_').replace(/\s+/g,'_').slice(0,80); }
+function _txnFilename(txn) {
+  const d = txn.docDate || (txn.id ? new Date(txn.id).toISOString().slice(0,10) : 'no-date');
+  const c = _sanitize(txn.customer && txn.customer.name || '거래처미입력');
+  const n = _sanitize(txn.docNum || ('TXN' + (txn.id||Date.now())));
+  return `${d}_${c}_${n}.json`;
+}
+
+async function ensureDataFolder(promptIfNeeded) {
+  if (!_fsApiSupported()) return false;
+  if (dataDirHandle) {
+    try {
+      const p = await dataDirHandle.queryPermission({ mode: 'readwrite' });
+      if (p === 'granted') return true;
+      if (promptIfNeeded) {
+        const r = await dataDirHandle.requestPermission({ mode: 'readwrite' });
+        if (r === 'granted') return true;
+      }
+    } catch {}
+    dataDirHandle = null;
+  }
+  try {
+    const stored = await _idbGet('dataDir');
+    if (stored) {
+      const p = await stored.queryPermission({ mode: 'readwrite' });
+      if (p === 'granted') { dataDirHandle = stored; return true; }
+      if (promptIfNeeded) {
+        const r = await stored.requestPermission({ mode: 'readwrite' });
+        if (r === 'granted') { dataDirHandle = stored; return true; }
+      }
+    }
+  } catch {}
+  if (!promptIfNeeded) return false;
+  return await pickDataFolder();
+}
+
+async function pickDataFolder() {
+  if (!_fsApiSupported()) {
+    alert('이 브라우저는 폴더 저장을 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.\n(현재 브라우저에서는 로컬 저장소에 보관됩니다)');
+    return false;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({ id: 'hbs-doc-data', mode: 'readwrite', startIn: 'documents' });
+    dataDirHandle = handle;
+    await _idbSet('dataDir', handle);
+    showToast('데이터 폴더가 설정되었습니다: ' + handle.name);
+    return true;
+  } catch (e) {
+    if (e && e.name !== 'AbortError') console.error(e);
+    return false;
+  }
+}
+
+async function changeDataFolder() {
+  const ok = await pickDataFolder();
+  if (ok) await openHistory();
+}
 
 // =============================================
 // STATE
@@ -2011,7 +2111,7 @@ function fillRentalDefaults() {
 // =============================================
 // TRANSACTION SAVE/LOAD
 // =============================================
-function saveTransaction() {
+async function saveTransaction() {
   const cu = getCust();
   const name = `${dateStr(getDocDate())} - ${cu.name||'거래처 미입력'} (${val('docNum')||'번호 없음'})`;
   const txn = {
@@ -2046,38 +2146,126 @@ function saveTransaction() {
     rcArt10: val('rc-art10'), rcAuto: val('rc-auto'), rcExtra2: val('rc-extra2'),
     rcSpecial1: val('rc-special1'), rcSpecial2: val('rc-special2')
   };
+
+  // 1) 데이터 폴더 우선 (File System Access API)
+  const ok = await ensureDataFolder(true);
+  if (ok && dataDirHandle) {
+    try {
+      // docNum 이 있으면 같은 docNum 의 기존 파일을 찾아 덮어쓰기
+      let target = _txnFilename(txn);
+      if (txn.docNum) {
+        const tag = '_' + _sanitize(txn.docNum) + '.json';
+        for await (const [n, h] of dataDirHandle.entries()) {
+          if (h.kind === 'file' && n.endsWith(tag)) { target = n; break; }
+        }
+      }
+      const fh = await dataDirHandle.getFileHandle(target, { create: true });
+      const w = await fh.createWritable();
+      await w.write(JSON.stringify(txn, null, 2));
+      await w.close();
+      showToast('📁 ' + dataDirHandle.name + '/' + target + ' 에 저장됨');
+      return;
+    } catch (e) {
+      console.error(e);
+      alert('폴더 저장 실패: ' + (e?.message||e) + '\n로컬 저장소로 대체합니다.');
+    }
+  }
+
+  // 2) 폴더 미설정/지원안함/실패 → localStorage 폴백
   let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
-  // 같은 docNum 있으면 덮어쓰기
   const existing = list.findIndex(t => t.docNum === txn.docNum && txn.docNum);
   if (existing >= 0) list[existing] = txn; else list.unshift(txn);
   if (list.length > 100) list = list.slice(0, 100);
   localStorage.setItem(KEY_TRANSACTIONS, JSON.stringify(list));
-  showToast('거래가 저장되었습니다.');
+  showToast('💾 로컬 저장소에 저장되었습니다.');
 }
-function openHistory() {
-  const list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
-  const el = $('historyList');
-  if (!list.length) { el.innerHTML = '<p style="text-align:center;color:#999;padding:20px">저장된 거래가 없습니다.</p>'; }
-  else {
-    const typeLabel = { quote:'견적서', statement:'거래명세표', tax:'세금계산서', contract:'계약서', rental:'📑임대계약서' };
-    const typeColor = { quote:'#1a56db', statement:'#059669', tax:'#d97706', contract:'#374151', rental:'#7c3aed' };
-    el.innerHTML = list.map(t => {
-      const tp = t.docType||'quote';
-      return `
-      <div class="history-item" onclick="loadTransaction(${t.id})">
-        <div class="hi-info">
-          <h4>${esc(t.name)} <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${typeColor[tp]||'#6b7280'};color:#fff;font-weight:600">${typeLabel[tp]||tp}</span></h4>
-          <span>${esc(t.customer?.name||'')} | 문서번호: ${esc(t.docNum||'-')}</span>
-        </div>
-        <button class="hi-del" onclick="event.stopPropagation();deleteTransaction(${t.id})">🗑</button>
-      </div>`;
-    }).join('');
-  }
+
+async function openHistory() {
   openModal('modalHistory');
+  const el = $('historyList');
+  el.innerHTML = '<p style="text-align:center;color:#999;padding:20px">⏳ 불러오는 중…</p>';
+  if ($('historyFolderInfo')) $('historyFolderInfo').textContent = '';
+
+  // 폴더 우선, 폴백은 localStorage
+  const ok = await ensureDataFolder(false);
+  _historyCache = [];
+  if (ok && dataDirHandle) {
+    try {
+      for await (const [n, h] of dataDirHandle.entries()) {
+        if (h.kind !== 'file' || !n.toLowerCase().endsWith('.json')) continue;
+        try {
+          const f = await h.getFile();
+          const t = JSON.parse(await f.text());
+          t._fileName = n;
+          t._mtime = f.lastModified;
+          _historyCache.push(t);
+        } catch {}
+      }
+    } catch (e) { console.error(e); }
+  }
+  // localStorage 도 같이 합쳐서 보여줌(중복 docNum 제거: 폴더 우선)
+  const ls = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+  const seen = new Set(_historyCache.map(t => t.docNum).filter(Boolean));
+  for (const t of ls) {
+    if (t.docNum && seen.has(t.docNum)) continue;
+    t._fileName = null; // localStorage 표시
+    _historyCache.push(t);
+  }
+  // 정렬: 파일이면 mtime, 없으면 id (Date.now) 내림차순
+  _historyCache.sort((a,b) => (b._mtime||b.id||0) - (a._mtime||a.id||0));
+
+  _renderFolderInfo();
+  renderHistory();
 }
+
+function _renderFolderInfo() {
+  const el = $('historyFolderInfo'); if (!el) return;
+  if (dataDirHandle) {
+    el.innerHTML = `📁 저장 폴더: <strong>${esc(dataDirHandle.name)}</strong> &nbsp;·&nbsp; 총 <strong>${_historyCache.length}</strong>건`;
+  } else if (_fsApiSupported()) {
+    el.innerHTML = `⚠ 데이터 폴더 미설정 — 현재는 브라우저 로컬 저장소(${_historyCache.length}건)를 사용 중. <a href="javascript:changeDataFolder()" style="color:#1a56db;text-decoration:underline">[데이터 폴더 선택]</a>`;
+  } else {
+    el.innerHTML = `ℹ 이 브라우저는 폴더 저장 미지원 — 브라우저 로컬 저장소(${_historyCache.length}건) 사용 중.`;
+  }
+}
+
+function renderHistory() {
+  const el = $('historyList'); if (!el) return;
+  const q = ($('historySearch')?.value||'').toLowerCase().trim();
+  const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+  const typeLabel = { quote:'견적서', statement:'거래명세표', tax:'세금계산서', contract:'계약서', rental:'📑임대계약서' };
+  const typeColor = { quote:'#1a56db', statement:'#059669', tax:'#d97706', contract:'#374151', rental:'#7c3aed' };
+
+  const filtered = !tokens.length ? _historyCache : _historyCache.filter(t => {
+    const cu = t.customer || {};
+    const hay = [
+      t.name, t.docNum, t.docDate, t.docType, typeLabel[t.docType||''],
+      cu.name, cu.reg, cu.ceo, cu.tel, cu.fax, cu.email, cu.addr, cu.biz,
+      t.note, t.deliveryPlace, t.paymentCond, t.rPerson, t.rMobile, t._fileName
+    ].filter(Boolean).join(' ').toLowerCase();
+    return tokens.every(k => hay.includes(k));
+  });
+
+  if (!filtered.length) {
+    el.innerHTML = `<p style="text-align:center;color:#999;padding:20px">${_historyCache.length ? '🔍 검색 결과가 없습니다.' : '저장된 거래가 없습니다.'}</p>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map(t => {
+    const tp = t.docType||'quote';
+    const src = t._fileName ? `📁 ${esc(t._fileName)}` : '💾 로컬';
+    return `<div class="history-item" onclick="loadTransaction(${t.id})">
+      <div class="hi-info">
+        <h4>${esc(t.name)} <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${typeColor[tp]||'#6b7280'};color:#fff;font-weight:600">${typeLabel[tp]||tp}</span></h4>
+        <span>${esc(t.customer?.name||'')} | 문서번호: ${esc(t.docNum||'-')} <span style="color:#94a3b8;font-size:10px;margin-left:6px">${src}</span></span>
+      </div>
+      <button class="hi-del" onclick="event.stopPropagation();deleteTransaction(${t.id})">🗑</button>
+    </div>`;
+  }).join('');
+}
+
 function loadTransaction(id) {
-  const list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
-  const t = list.find(x => x.id === id);
+  const t = _historyCache.find(x => x.id === id) || _historyCache.find(x => String(x.id) === String(id));
   if (!t) return;
   $('docNum').value = t.docNum||'';
   $('docDate').value = t.docDate||'';
@@ -2132,12 +2320,18 @@ function loadTransaction(id) {
   renderAll();
   showToast('거래를 불러왔습니다.');
 }
-function deleteTransaction(id) {
+async function deleteTransaction(id) {
   if (!confirm('이 거래를 삭제하시겠습니까?')) return;
-  let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
-  list = list.filter(t => t.id !== id);
-  localStorage.setItem(KEY_TRANSACTIONS, JSON.stringify(list));
-  openHistory();
+  const t = _historyCache.find(x => x.id === id) || _historyCache.find(x => String(x.id) === String(id));
+  if (t && t._fileName && dataDirHandle) {
+    try { await dataDirHandle.removeEntry(t._fileName); }
+    catch (e) { console.error(e); alert('파일 삭제 실패: ' + (e?.message||e)); }
+  } else {
+    let list = JSON.parse(localStorage.getItem(KEY_TRANSACTIONS)||'[]');
+    list = list.filter(x => x.id !== id && String(x.id) !== String(id));
+    localStorage.setItem(KEY_TRANSACTIONS, JSON.stringify(list));
+  }
+  await openHistory();
 }
 
 // =============================================
@@ -2191,6 +2385,8 @@ function fillContractDefaults() {
   renderRentalItemRows();
   updateRentalTotals();
   renderAll();
+  // 데이터 폴더 핸들 복원 (사용자 동작 없으면 권한 프롬프트는 뜨지 않음)
+  ensureDataFolder(false).catch(()=>{});
 })();
 </script>
 </body>
