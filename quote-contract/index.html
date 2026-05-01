@@ -324,6 +324,20 @@ body.rental-mode .normal-only{display:none !important}
 .page-separator{border:none;border-top:3px dashed #ccd;margin:24px 0;position:relative}
 .page-separator::after{content:'▼ 다음 페이지';position:absolute;left:50%;transform:translateX(-50%);top:-8px;background:#f1f5f9;padding:0 8px;font-size:11px;color:#94a3b8}
 
+/* ===== SIGNATURE PAD ===== */
+.sig-canvas-wrap{
+  position:relative;border:2px dashed #94a3b8;border-radius:6px;
+  background:repeating-linear-gradient(45deg,#fafafa 0,#fafafa 10px,#f5f5f5 10px,#f5f5f5 20px);
+  overflow:hidden
+}
+#sigCanvas{display:block;width:100%;height:200px;cursor:crosshair;touch-action:none}
+.sig-hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:#cbd5e1;font-size:14px;pointer-events:none;user-select:none;
+  font-weight:700
+}
+.sig-hint.hidden{display:none}
+
 /* ===== RESPONSIVE (B안: 모바일/태블릿) ===== */
 
 /* 태블릿 (≤ 1023px) — 좌측 패널 슬림화 + 헤더 텍스트 줄임 */
@@ -446,6 +460,33 @@ body.rental-mode .normal-only{display:none !important}
     <div class="modal-footer">
       <button class="btn btn-gray" onclick="closeModal('modalCompany')">닫기</button>
       <button class="btn btn-blue" onclick="saveMyCompany()">💾 저장하고 활성으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✍ 전자 서명 입력 -->
+<div class="modal-bg" id="modalSignature">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hd">
+      <h2 id="sigTitle">✍ 서명 입력</h2>
+      <button class="modal-close" onclick="closeModal('modalSignature')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:#666;margin-bottom:8px" id="sigHelp">아래 영역에 마우스 또는 손가락으로 서명을 그려주세요. 그린 그대로 문서에 삽입됩니다.</p>
+      <div class="sig-canvas-wrap">
+        <canvas id="sigCanvas"></canvas>
+        <div class="sig-hint" id="sigHint">↳ 여기에 서명해주세요</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-gray" onclick="sigClear()">🧹 다시 그리기</button>
+        <label style="font-size:11px;color:#64748b;margin-left:auto">또는 PNG/JPG 업로드:</label>
+        <input type="file" id="sigUpload" accept="image/png,image/jpeg" onchange="sigUploadFile(event)" style="font-size:11px;max-width:180px">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red btn-sm" onclick="sigDelete()" id="sigDeleteBtn" style="margin-right:auto">🗑 서명 삭제</button>
+      <button class="btn btn-gray" onclick="closeModal('modalSignature')">취소</button>
+      <button class="btn btn-blue" onclick="sigSave()">💾 저장</button>
     </div>
   </div>
 </div>
@@ -812,6 +853,10 @@ body.rental-mode .normal-only{display:none !important}
     </div>
 
     <div class="action-bar" id="actionBar">
+      <!-- ✍ 전자 서명 버튼 (모든 탭 공통) -->
+      <button class="btn btn-gray" onclick="openSig('me')" title="활성 회사의 내 서명 등록/수정">✍ 내 서명</button>
+      <button class="btn btn-gray" onclick="openSig('customer')" title="이번 문서에 들어갈 고객 서명">✍ 고객 서명</button>
+      <div class="sep"></div>
       <!-- 일반 문서용 버튼 (normal-only) -->
       <button class="btn btn-blue normal-only" onclick="printCurrent()">🖨️ 현재 문서 인쇄</button>
       <div class="sep normal-only"></div>
@@ -1106,6 +1151,189 @@ function deleteMyCompany() {
   _refreshCompanySelect();
   renderAll();
   showToast('🗑 삭제됨');
+}
+
+// =============================================
+// ✍ 전자 서명 (E-SIGNATURE)
+// =============================================
+let customerSig = '';                 // 현재 폼의 고객 서명 (data URL)
+let _sigTarget = null;                // 'me' | 'customer'
+let _sigCtx = null;
+let _sigDrawing = false;
+let _sigEmpty = true;
+let _sigBound = false;
+
+function getSig(type) {
+  if (type === 'me') return (companies[companyActiveIdx] && companies[companyActiveIdx].signature) || '';
+  return customerSig || '';
+}
+function setSig(type, dataUrl) {
+  if (type === 'me') {
+    if (!companies[companyActiveIdx]) return;
+    if (dataUrl) companies[companyActiveIdx].signature = dataUrl;
+    else delete companies[companyActiveIdx].signature;
+    localStorage.setItem(KEY_COMPANIES, JSON.stringify(companies));
+    myCompany = Object.assign({}, _MC_DEFAULTS, companies[companyActiveIdx]);
+    localStorage.setItem(KEY_COMPANY, JSON.stringify(myCompany));
+  } else {
+    customerSig = dataUrl || '';
+  }
+}
+function sigImg(type, opts) {
+  opts = opts || {};
+  const data = getSig(type);
+  if (!data) return '';
+  const h = opts.h || '32px';
+  const w = opts.w || 'auto';
+  const align = opts.align || 'center';
+  const ml = align === 'center' ? 'auto' : '0';
+  const mr = align === 'center' ? 'auto' : '0';
+  return `<img src="${data}" alt="서명" style="display:block;height:${h};width:${w};max-width:100%;max-height:${h};object-fit:contain;margin:0 ${mr} 0 ${ml}">`;
+}
+
+function openSig(target) {
+  _sigTarget = target;
+  const isMe = target === 'me';
+  const co = companies[companyActiveIdx];
+  $('sigTitle').textContent = isMe
+    ? `✍ 내 서명 (${(co && (co.displayName||co.name)) || '활성 회사'})`
+    : `✍ 고객 서명 (${val('c-name')||'거래처'})`;
+  $('sigHelp').textContent = isMe
+    ? '한 번 등록하면 활성 회사의 모든 문서 서명란에 자동 삽입됩니다.'
+    : '이번 문서에만 적용됩니다. [💾 거래 저장] 시 함께 저장됩니다.';
+  openModal('modalSignature');
+  // Defer canvas init so layout settles
+  setTimeout(_sigInitCanvas, 30);
+}
+
+function _sigInitCanvas() {
+  const c = $('sigCanvas');
+  if (!c) return;
+  const wrap = c.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = wrap.clientWidth;
+  const cssH = 200;
+  c.style.width = cssW + 'px';
+  c.style.height = cssH + 'px';
+  c.width = Math.round(cssW * dpr);
+  c.height = Math.round(cssH * dpr);
+  _sigCtx = c.getContext('2d');
+  _sigCtx.setTransform(1,0,0,1,0,0);
+  _sigCtx.scale(dpr, dpr);
+  _sigCtx.lineWidth = 2.4;
+  _sigCtx.lineCap = 'round';
+  _sigCtx.lineJoin = 'round';
+  _sigCtx.strokeStyle = '#000';
+  _sigCtx.clearRect(0, 0, cssW, cssH);
+  _sigEmpty = true;
+  $('sigHint').classList.remove('hidden');
+  // Pre-fill existing signature
+  const existing = getSig(_sigTarget);
+  if (existing) {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(cssW/img.width, cssH/img.height, 1);
+      const w = img.width * ratio, h = img.height * ratio;
+      _sigCtx.drawImage(img, (cssW-w)/2, (cssH-h)/2, w, h);
+      _sigEmpty = false;
+      $('sigHint').classList.add('hidden');
+    };
+    img.src = existing;
+  }
+  if (!_sigBound) _bindSigEvents(c);
+}
+
+function _sigPos(e, c) {
+  const r = c.getBoundingClientRect();
+  const t = (e.touches && e.touches[0]) || e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+function _bindSigEvents(c) {
+  const start = (e) => { if (!_sigCtx) return; _sigDrawing = true; const p = _sigPos(e, c); _sigCtx.beginPath(); _sigCtx.moveTo(p.x, p.y); $('sigHint').classList.add('hidden'); e.preventDefault(); };
+  const move = (e) => { if (!_sigDrawing || !_sigCtx) return; const p = _sigPos(e, c); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke(); _sigEmpty = false; e.preventDefault(); };
+  const end = () => { _sigDrawing = false; };
+  c.addEventListener('mousedown', start);
+  c.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', end);
+  c.addEventListener('touchstart', start, {passive:false});
+  c.addEventListener('touchmove', move, {passive:false});
+  c.addEventListener('touchend', end);
+  _sigBound = true;
+}
+
+function sigClear() {
+  if (!_sigCtx) return;
+  const c = $('sigCanvas');
+  _sigCtx.clearRect(0, 0, parseFloat(c.style.width), parseFloat(c.style.height));
+  _sigEmpty = true;
+  $('sigHint').classList.remove('hidden');
+}
+function sigUploadFile(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const c = $('sigCanvas');
+      const cssW = parseFloat(c.style.width), cssH = parseFloat(c.style.height);
+      _sigCtx.clearRect(0, 0, cssW, cssH);
+      const ratio = Math.min(cssW/img.width, cssH/img.height);
+      const w = img.width*ratio, h = img.height*ratio;
+      _sigCtx.drawImage(img, (cssW-w)/2, (cssH-h)/2, w, h);
+      _sigEmpty = false;
+      $('sigHint').classList.add('hidden');
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(f);
+  e.target.value = '';
+}
+function sigSave() {
+  const c = $('sigCanvas');
+  if (_sigEmpty) {
+    setSig(_sigTarget, '');
+    showToast('빈 서명으로 저장됨 (삭제와 동일).');
+  } else {
+    // Trim transparent margins for cleaner placement
+    const trimmed = _sigTrim(c) || c.toDataURL('image/png');
+    setSig(_sigTarget, trimmed);
+    showToast('✍ 서명이 저장되었습니다.');
+  }
+  closeModal('modalSignature');
+  renderAll();
+}
+function sigDelete() {
+  if (!confirm('현재 ' + (_sigTarget==='me'?'내':'고객') + ' 서명을 삭제하시겠습니까?')) return;
+  setSig(_sigTarget, '');
+  closeModal('modalSignature');
+  renderAll();
+  showToast('🗑 서명이 삭제되었습니다.');
+}
+// 투명 여백 제거 (보기 깔끔하게)
+function _sigTrim(srcCanvas) {
+  try {
+    const ctx = srcCanvas.getContext('2d');
+    const w = srcCanvas.width, h = srcCanvas.height;
+    const data = ctx.getImageData(0, 0, w, h).data;
+    let top=h, left=w, right=0, bottom=0;
+    for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+      const a = data[(y*w + x)*4 + 3];
+      if (a > 8) {
+        if (x<left) left=x; if (x>right) right=x;
+        if (y<top) top=y; if (y>bottom) bottom=y;
+      }
+    }
+    if (right<left || bottom<top) return null;
+    const pad = 6;
+    left = Math.max(0, left-pad); top = Math.max(0, top-pad);
+    right = Math.min(w-1, right+pad); bottom = Math.min(h-1, bottom+pad);
+    const tw = right-left+1, th = bottom-top+1;
+    const tmp = document.createElement('canvas');
+    tmp.width = tw; tmp.height = th;
+    tmp.getContext('2d').drawImage(srcCanvas, left, top, tw, th, 0, 0, tw, th);
+    return tmp.toDataURL('image/png');
+  } catch { return null; }
 }
 
 // =============================================
@@ -1541,8 +1769,8 @@ function renderContract() {
           <div>상호: ${esc(cu.name)||'________________'}</div>
           <div>주소: ${esc(cu.addr)||'________________'}</div>
         </div>
-        <div class="sig-line"></div>
-        <div class="sig-name">대표자: ${esc(cu.ceo)||'____________'} (인)</div>
+        ${getSig('customer') ? `<div style="height:46px;display:flex;align-items:flex-end;justify-content:center;margin:8px 0 2px">${sigImg('customer',{h:'46px'})}</div>` : `<div class="sig-line"></div>`}
+        <div class="sig-name">대표자: ${esc(cu.ceo)||'____________'} ${getSig('customer')?'<span style="color:#1a56db;font-size:8pt">✓ 서명</span>':'(인)'}</div>
       </div>
       <div class="sig-box">
         <h3>을 (수주처)</h3>
@@ -1550,8 +1778,8 @@ function renderContract() {
           <div>상호: ${esc(me.name)||'한별시스템'}</div>
           <div>주소: ${esc(me.addr)||'________________'}</div>
         </div>
-        <div class="sig-line"></div>
-        <div class="sig-name">대표자: ${esc(me.ceo)||'____________'} (인)</div>
+        ${getSig('me') ? `<div style="height:46px;display:flex;align-items:flex-end;justify-content:center;margin:8px 0 2px">${sigImg('me',{h:'46px'})}</div>` : `<div class="sig-line"></div>`}
+        <div class="sig-name">대표자: ${esc(me.ceo)||'____________'} ${getSig('me')?'<span style="color:#1a56db;font-size:8pt">✓ 서명</span>':'(인)'}</div>
       </div>
     </div>
   </div>`;
@@ -1932,8 +2160,10 @@ function renderRentalPage1() {
         <div style="font-size:9pt;font-weight:600;margin-bottom:10px">${dateStr(getDocDate())} &nbsp; 년 &nbsp; 월 &nbsp; 일</div>
         <div class="rental-sig-row">
           <span class="rental-sig-label">담당자</span>
-          <div class="rental-sig-line"></div>
-          <span class="rental-sig-label">&nbsp;&nbsp;(인) 또는 서명</span>
+          ${getSig('customer')
+            ? `<div style="display:flex;align-items:flex-end;justify-content:flex-start;height:34px">${sigImg('customer',{h:'34px',align:'left'})}</div>`
+            : `<div class="rental-sig-line"></div>`}
+          <span class="rental-sig-label">&nbsp;&nbsp;${getSig('customer')?'<span style="color:#1a56db">✓ 전자서명</span>':'(인) 또는 서명'}</span>
           <div></div>
         </div>
         <div class="rental-info-box" style="margin-top:10px">
@@ -1943,10 +2173,12 @@ function renderRentalPage1() {
               대표번호 ${esc(me.tel||'053-588-7119')} &nbsp;|&nbsp; 담당자 ${esc(me.ceo||'-')}<br>
               ${me.bank ? `입금계좌: ${esc(me.bank)} ${esc(me.account)} (${esc(me.holder||me.name)})` : ''}
             </div>
-            <div style="text-align:center;border:1px solid #ccc;padding:8px 16px;border-radius:4px">
+            <div style="text-align:center;border:1px solid #ccc;padding:8px 16px;border-radius:4px;min-width:130px">
               <div style="font-size:8pt;color:#666">공급자 서명</div>
-              <div style="height:30px"></div>
-              <div style="border-top:1px solid #999;font-size:9pt;font-weight:700;padding-top:4px">${esc(me.name||'한별시스템')} (인)</div>
+              ${getSig('me')
+                ? `<div style="height:36px;display:flex;align-items:center;justify-content:center">${sigImg('me',{h:'36px'})}</div>`
+                : `<div style="height:30px"></div>`}
+              <div style="border-top:1px solid #999;font-size:9pt;font-weight:700;padding-top:4px">${esc(me.name||'한별시스템')} ${getSig('me')?'<span style="color:#1a56db;font-size:8pt">✓</span>':'(인)'}</div>
             </div>
           </div>
         </div>
@@ -2044,16 +2276,22 @@ function renderRentalPage2() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       <div style="border:1px solid #333;padding:12px;text-align:center">
         <div style="font-size:9pt;font-weight:700;margin-bottom:4px">갑 (임차인)</div>
-        <div style="font-size:8.5pt;color:#555;margin-bottom:16px">${esc(cu.name||'__________________')}</div>
+        <div style="font-size:8.5pt;color:#555;margin-bottom:8px">${esc(cu.name||'__________________')}</div>
+        ${getSig('customer')
+          ? `<div style="height:46px;display:flex;align-items:center;justify-content:center;margin-bottom:4px">${sigImg('customer',{h:'46px'})}</div>`
+          : `<div style="height:46px"></div>`}
         <div style="border-top:1px solid #999;padding-top:6px;font-size:8.5pt">
-          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${getSig('customer')?'<span style="color:#1a56db">✓ 전자서명</span>':'(인)'}
         </div>
       </div>
       <div style="border:1px solid #333;padding:12px;text-align:center">
         <div style="font-size:9pt;font-weight:700;margin-bottom:4px">을 (임대인)</div>
-        <div style="font-size:8.5pt;color:#555;margin-bottom:16px">${esc(me.name||'한별시스템')}</div>
+        <div style="font-size:8.5pt;color:#555;margin-bottom:8px">${esc(me.name||'한별시스템')}</div>
+        ${getSig('me')
+          ? `<div style="height:46px;display:flex;align-items:center;justify-content:center;margin-bottom:4px">${sigImg('me',{h:'46px'})}</div>`
+          : `<div style="height:46px"></div>`}
         <div style="border-top:1px solid #999;padding-top:6px;font-size:8.5pt">
-          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+          서명 또는 날인 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${getSig('me')?'<span style="color:#1a56db">✓ 전자서명</span>':'(인)'}
         </div>
       </div>
     </div>
@@ -2154,13 +2392,17 @@ function renderRentalPage3() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 6px">
           <div style="border:1px solid #333;padding:5px">
             <div style="font-size:7.5pt;font-weight:700;margin-bottom:2px">예금주 / 카드주</div>
-            <div style="height:22px"></div>
-            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-holder')||'________')} &nbsp;(인)</div>
+            ${getSig('customer')
+              ? `<div style="height:30px;display:flex;align-items:center;justify-content:center">${sigImg('customer',{h:'30px'})}</div>`
+              : `<div style="height:22px"></div>`}
+            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-holder')||'________')} &nbsp;${getSig('customer')?'<span style="color:#1a56db">✓</span>':'(인)'}</div>
           </div>
           <div style="border:1px solid #333;padding:5px">
             <div style="font-size:7.5pt;font-weight:700;margin-bottom:2px">신청인</div>
-            <div style="height:22px"></div>
-            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-person')||cu.ceo||'________')} &nbsp;(인)</div>
+            ${getSig('customer')
+              ? `<div style="height:30px;display:flex;align-items:center;justify-content:center">${sigImg('customer',{h:'30px'})}</div>`
+              : `<div style="height:22px"></div>`}
+            <div style="border-top:1px solid #999;padding-top:3px;font-size:7pt">${esc(val('r-person')||cu.ceo||'________')} &nbsp;${getSig('customer')?'<span style="color:#1a56db">✓</span>':'(인)'}</div>
           </div>
         </div>
         <div style="font-size:6pt;color:#666;margin:3px 6px">*신청인과 예금주/카드주가 상이한 경우 예금주/카드주의 동의 필요</div>
@@ -2340,7 +2582,9 @@ async function saveTransaction() {
     rcArt4: val('rc-art4'), rcArt5: val('rc-art5'), rcArt6: val('rc-art6'),
     rcArt7: val('rc-art7'), rcArt8: val('rc-art8'), rcArt9: val('rc-art9'),
     rcArt10: val('rc-art10'), rcAuto: val('rc-auto'), rcExtra2: val('rc-extra2'),
-    rcSpecial1: val('rc-special1'), rcSpecial2: val('rc-special2')
+    rcSpecial1: val('rc-special1'), rcSpecial2: val('rc-special2'),
+    // ✍ 전자 서명 (고객 서명만 거래에 함께 저장; 내 서명은 회사 정보에 보관)
+    customerSig: customerSig || ''
   };
 
   // 1) 데이터 폴더 우선 (File System Access API)
@@ -2505,6 +2749,8 @@ function loadTransaction(id) {
     'rc-special1':'rcSpecial1','rc-special2':'rcSpecial2'
   };
   Object.entries(cmsMap).forEach(([fid,key]) => { if($(fid)) $(fid).value = t[key]||''; });
+  // ✍ 전자 서명 복원
+  customerSig = t.customerSig || '';
   // 저장 당시 탭으로 전환
   if (t.docType) {
     const tabs = document.querySelectorAll('.doc-tab');
