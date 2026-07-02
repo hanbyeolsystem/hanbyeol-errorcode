@@ -467,59 +467,20 @@ html, body {
 .toner-tag.type-waste { background: #f8d7da; color: #721c24; }
 .toner-tag.type-other { background: #e9ecef; color: #495057; }
 
-/* DETAIL PANEL */
-.detail-panel {
-  position: fixed; right: 0; top: 0;
-  width: 400px; height: 100vh;
-  background: white; border-left: 1px solid var(--border);
-  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
-  z-index: 200;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  overflow-y: auto;
-  display: flex; flex-direction: column;
+/* BRAND GROUP */
+.brand-group { margin-bottom: 32px; }
+.brand-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.3rem; font-weight: 700; color: var(--primary-dark);
+  padding: 10px 14px; margin-bottom: 14px;
+  background: linear-gradient(90deg, rgba(0,132,255,0.08), transparent);
+  border-left: 4px solid var(--primary);
+  border-radius: 4px;
 }
-.detail-panel.active { transform: translateX(0); }
-.detail-header {
-  background: var(--primary); color: white; padding: 16px;
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 10;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.detail-close {
-  background: rgba(255,255,255,0.2); border: none; color: white;
-  width: 32px; height: 32px; border-radius: 4px;
-  cursor: pointer; font-size: 1.2rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s;
-}
-.detail-close:hover { background: rgba(255,255,255,0.3); }
-.detail-content { padding: 20px; flex: 1; }
-.detail-code {
-  font-size: 1.8rem; font-weight: 700;
-  color: var(--primary); margin-bottom: 12px;
-  font-family: monospace; word-break: break-all;
-}
-.detail-name {
-  font-size: 1.1rem; font-weight: 600;
-  color: var(--text); margin-bottom: 16px;
-}
-.detail-meta {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 16px; margin-bottom: 16px;
-  padding-bottom: 16px; border-bottom: 1px solid var(--border);
-}
-.detail-meta-item { font-size: 1.05rem; min-width: 0; }
-.detail-meta-label { color: var(--text-light); margin-bottom: 6px; font-size: 0.95rem; }
-.detail-meta-value { font-weight: 700; color: var(--text); font-size: 1.7rem; line-height: 1.3; word-break: break-word; }
-.detail-section { margin-bottom: 16px; }
-.detail-section-title {
-  font-size: 0.9rem; font-weight: 600;
-  color: var(--text); margin-bottom: 8px;
-  text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;
-}
-.detail-section-content {
-  font-size: 0.9rem; line-height: 1.6; color: var(--text);
+.brand-count {
+  font-size: 0.85rem; font-weight: 600; color: var(--text-light);
+  background: white; padding: 3px 10px; border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 /* EMPTY / LOADING */
@@ -532,7 +493,6 @@ html, body {
   .sidebar { width: 200px; padding: 12px; }
   .search-box { grid-template-columns: 1fr 1fr; }
   .results-grid { grid-template-columns: 1fr; }
-  .detail-panel { width: 350px; }
 }
 
 @media (max-width: 767px) {
@@ -557,14 +517,7 @@ html, body {
   .results-wrapper { padding: 12px; max-width: 100%; }
   .results-grid { grid-template-columns: 1fr; gap: 12px; }
   .toner-card { padding: 12px; }
-  .detail-panel { width: 100%; transform: translateY(100%); }
-  .detail-panel.active { transform: translateY(0); }
-  .detail-header { padding: 12px; }
-  .detail-content { padding: 16px; }
-  .detail-code { font-size: 1.5rem; }
-  .detail-meta { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .detail-meta-value { font-size: 1.2rem; }
-  .detail-meta-label { font-size: 0.75rem; }
+  .brand-title { font-size: 1.1rem; padding: 8px 12px; }
 }
 </style>
 </head>
@@ -704,14 +657,6 @@ html, body {
   </div>
 </div>
 
-<div class="detail-panel" id="detail-panel">
-  <div class="detail-header">
-    <div>상세 정보</div>
-    <button class="detail-close" onclick="closeDetail()">✕</button>
-  </div>
-  <div class="detail-content" id="detail-content"></div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 let allToners = [];
@@ -841,75 +786,53 @@ function resetFilters() {
   showMessage('🔍', '검색 조건을 입력하여 토너/소모품을 찾아보세요');
 }
 
-const RENDER_LIMIT = 200;
+const RENDER_LIMIT = 500;
 function displayResults(results) {
   const container = document.getElementById('results-container');
   if (results.length === 0) { showMessage('❌', '검색 결과가 없습니다'); return; }
   const shown = results.slice(0, RENDER_LIMIT);
   const overflow = results.length > RENDER_LIMIT ? ` (상위 ${RENDER_LIMIT}건 표시)` : '';
 
-  container.innerHTML = `
-    <div class="results-info">${results.length.toLocaleString()}개 결과${overflow}</div>
-    <div class="results-grid">
-      ${shown.map((t, i) => {
-        const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
-        const yieldTag = t.yield ? `<span class="toner-tag type-drum">📄 ${esc(t.yield)}</span>` : '';
-        return `
-        <div class="toner-card no-image" data-idx="${i}">
-          <div class="toner-body">
-            <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
-              <span class="toner-code">${esc(t.part_code)}</span>
-              <span class="toner-mfr">${esc(t.manufacturer)}</span>
-            </div>
-            <div class="toner-name">${esc(t.part_name)}</div>
-            ${t.compatible_models ? `<div class="toner-models">🖨 ${esc(t.compatible_models)}</div>` : ''}
-            <div class="toner-meta">
-              ${colorTag}
-              ${yieldTag}
-              ${t.gg_code ? `<span class="toner-tag type-other">${esc(t.gg_code)}</span>` : ''}
-            </div>
-          </div>
-        </div>
-      `;}).join('')}
-    </div>
-  `;
-  container.querySelectorAll('.toner-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const idx = Number(card.dataset.idx);
-      if (shown[idx]) showDetail(shown[idx]);
-    });
+  const groups = {};
+  shown.forEach(t => {
+    const mfr = t.manufacturer || '기타';
+    if (!groups[mfr]) groups[mfr] = [];
+    groups[mfr].push(t);
   });
-}
+  const brands = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
 
-function showDetail(t) {
-  const panel = document.getElementById('detail-panel');
-  const content = document.getElementById('detail-content');
-
-  content.innerHTML = `
-    <div class="detail-meta">
-      <div class="detail-meta-item">
-        <div class="detail-meta-label">제조사</div>
-        <div class="detail-meta-value">${esc(t.manufacturer)}</div>
-      </div>
-      <div class="detail-meta-item">
-        <div class="detail-meta-label">토너명</div>
-        <div class="detail-meta-value">${esc(t.toner_model || t.part_name)}</div>
-      </div>
-      <div class="detail-meta-item">
-        <div class="detail-meta-label">출력매수</div>
-        <div class="detail-meta-value">${esc(t.yield || '—')}</div>
-      </div>
-      <div class="detail-meta-item">
-        <div class="detail-meta-label">색상</div>
-        <div class="detail-meta-value">${esc(t.color || '—')}</div>
-      </div>
-    </div>
+  container.innerHTML = `
+    <div class="results-info">${results.length.toLocaleString()}개 결과${overflow} · ${brands.length}개 브랜드</div>
+    ${brands.map(brand => `
+      <section class="brand-group">
+        <h2 class="brand-title">
+          <span class="brand-name">${esc(brand)}</span>
+          <span class="brand-count">${groups[brand].length}건</span>
+        </h2>
+        <div class="results-grid">
+          ${groups[brand].map(t => {
+            const colorTag = t.color ? `<span class="toner-tag color-${esc(t.color.split('/')[0])}">${esc(t.color)}</span>` : '';
+            const yieldTag = t.yield ? `<span class="toner-tag type-drum">📄 ${esc(t.yield)}</span>` : '';
+            return `
+            <div class="toner-card no-image">
+              <div class="toner-body">
+                <div style="display:flex;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+                  <span class="toner-code">${esc(t.part_code)}</span>
+                </div>
+                <div class="toner-name">${esc(t.part_name)}</div>
+                ${t.compatible_models ? `<div class="toner-models">🖨 ${esc(t.compatible_models)}</div>` : ''}
+                <div class="toner-meta">
+                  ${colorTag}
+                  ${yieldTag}
+                  ${t.gg_code ? `<span class="toner-tag type-other">${esc(t.gg_code)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `;}).join('')}
+        </div>
+      </section>
+    `).join('')}
   `;
-  panel.classList.add('active');
-}
-
-function closeDetail() {
-  document.getElementById('detail-panel').classList.remove('active');
 }
 
 // ==================== OCR (라이브 카메라 + 퍼지 매칭) ====================
@@ -1300,7 +1223,8 @@ function renderMatches(matches) {
       const toner = allToners.find(t => t.id === id);
       if (toner) {
         closeOcr();
-        showDetail(toner);
+        document.getElementById('keyword').value = toner.part_code || toner.toner_model || toner.part_name || '';
+        search();
       }
     });
   });
