@@ -799,7 +799,14 @@ function displayResults(results) {
     if (!groups[mfr]) groups[mfr] = [];
     groups[mfr].push(t);
   });
-  const brands = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+  const BRAND_ORDER = ['Samsung', 'Brother', 'Kyocera', 'HP', 'Canon', 'HP/Canon'];
+  const priority = new Map(BRAND_ORDER.map((b, i) => [b, i]));
+  const brands = Object.keys(groups).sort((a, b) => {
+    const pa = priority.has(a) ? priority.get(a) : Infinity;
+    const pb = priority.has(b) ? priority.get(b) : Infinity;
+    if (pa !== pb) return pa - pb;
+    return groups[b].length - groups[a].length;
+  });
 
   container.innerHTML = `
     <div class="results-info">${results.length.toLocaleString()}개 결과${overflow} · ${brands.length}개 브랜드</div>
