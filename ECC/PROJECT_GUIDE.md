@@ -1,7 +1,7 @@
 # 한별시스템 에러코드 프로젝트 가이드
 
 > 이 문서는 에러코드 검색 시스템의 **현재 상태**와 **다음 작업 이어서 하는 방법**을 정리한 인수인계 문서입니다.
-> 마지막 업데이트: **2026-04-22**
+> 마지막 업데이트: **2026-09-26**
 
 ---
 
@@ -11,9 +11,9 @@
 |---|---|
 | Live URL | https://hanbyeolsystem.github.io/hanbyeol-errorcode/ |
 | GitHub repo | https://github.com/hanbyeolsystem/hanbyeol-errorcode |
-| 총 레코드 | **17,082건** |
+| 총 레코드 | **16,787건** (전부 한글, 번역 2,780건은 영문 원문 보존) |
 | 제조사 | 9개 (Sindoh, Canon, Konica Minolta, Samsung, Kyocera, Brother, Epson, HP, Xerox) |
-| JSON 크기 | 약 16.22 MB |
+| JSON 크기 | 약 19.2 MB |
 | 내부망 NAS 경로 | `\\192.168.0.249\ErrorCode\` |
 
 ---
@@ -89,14 +89,18 @@ C:\Users\UserK\Desktop\nas-ai\nas-ai\hanbyeol-errorcode\
   "category": "구동 시스템",          // 카테고리 (드롭다운용)
   "manufacturer": "Kyocera",        // 제조사 (드롭다운용)
   "tips": "",                       // 추가 팁 (optional)
+  "original": "[원인] ...",          // 영문 원문 (번역된 레코드에만 존재, 상세 화면 '원문' 섹션)
   "images": [],                     // 미사용 (future)
   "videos": [],                     // 미사용 (future)
   "parts": []                       // 미사용 (future)
 }
 ```
 
-### 카테고리 목록 (자동 추론)
+### 카테고리 목록 (13종 표준 — 이 목록 외 값 사용 금지)
 `급지 시스템`, `구동 시스템`, `정착/퓨저`, `스캐너`, `토너/잉크/드럼`, `레이저/이미지`, `통신/네트워크`, `센서`, `전원/고전압`, `팩스`, `메모리/펌웨어`, `보드/PCB`, `기타`
+
+### 교세라 코드 표기 규칙
+- 서비스콜 `C` + 4자리 (C6000), 용지걸림 `J` + 4자리 (J0511), 시스템 `F` + 3자리 (F000) — 패널 표기와 동일하게 저장
 
 ### 제조사 목록 (9개)
 `Sindoh`, `Canon`, `Konica Minolta`, `Samsung`, `Kyocera`, `Brother`, `Epson`, `HP`, `Xerox`
@@ -333,7 +337,9 @@ curl -sL https://hanbyeolsystem.github.io/hanbyeol-errorcode/errors_v2.json \
 | 2026-04-22 | ECC/ADS 시트 추가 | 1,182 |
 | 2026-04-22 | 관리자 버튼 제거 | 1,182 |
 | 2026-04-22 | websr.mooo.com/ecode 스크래핑 병합 | 20,034 |
-| 2026-04-22 | Dell/DGwox/Ricoh 제거 | **17,082** |
+| 2026-04-22 | Dell/DGwox/Ricoh 제거 | 17,082 |
+| 2026-05-04 | HP OfficeJet Pro 8710 20건, Epson EM-C800 44건 추가 | 17,146 |
+| 2026-09-26 | 영문 2,780건 한글 번역(원문 보존) · 교세라 중복 429건 제거 및 코드 표준화(C6000/J0511) · websr HTML 찌꺼기 957건 정리 · 브라더 구형 데이터 원본 재구성(385건) · 교세라 현행 공통 87건·브라더 L시리즈 55건·HP 33건 추가 · 엡손/HP/교세라 오류 레코드 교정 · 카테고리 13종 표준화 | **16,787** |
 
 ---
 

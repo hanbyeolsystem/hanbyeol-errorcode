@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>프린터 에러코드 검색 — 교세라·HP·삼성 등 7개 제조사 17,000건</title>
-<meta name="description" content="프린터·복합기 에러코드 검색. 교세라(Kyocera)·HP·삼성·캐논·엡손 등 7개 제조사 17,146건의 에러코드 원인과 해결 방법을 무료로 검색합니다. 한별시스템 제공.">
-<meta name="keywords" content="프린터 에러코드, 복합기 에러코드, 교세라 에러코드, Kyocera 에러, C-CALL, 프린터 고장, 복합기 수리">
-<meta property="og:title" content="프린터 에러코드 검색 — 7개 제조사 17,000건">
-<meta property="og:description" content="에러코드의 원인과 해결 방법을 즉시 검색. 교세라·HP·삼성·캐논·엡손 등 지원.">
+<title>프린터 에러코드 검색 — 교세라·브라더·HP·삼성 등 9개 제조사 16,700여 건</title>
+<meta name="description" content="프린터·복합기 에러코드 검색. 교세라(Kyocera)·브라더·신도리코·캐논·HP·삼성·엡손 등 9개 제조사 16,787건의 에러코드 원인과 해결 방법을 한글로 무료 검색합니다. 한별시스템 제공.">
+<meta name="keywords" content="프린터 에러코드, 복합기 에러코드, 교세라 에러코드, Kyocera 에러, C6000, C-CALL, 브라더 에러, Replace Toner, 신도리코 에러코드, 프린터 고장, 복합기 수리">
+<meta property="og:title" content="프린터 에러코드 검색 — 9개 제조사 16,700여 건">
+<meta property="og:description" content="에러코드의 원인과 해결 방법을 즉시 검색. 교세라·브라더·신도리코·캐논·HP·삼성·엡손 등 지원.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <script type="application/ld+json">
@@ -16,7 +16,7 @@
   "@type": "WebApplication",
   "name": "프린터 에러코드 검색",
   "url": "https://hanbyeolsystem.github.io/hanbyeol-errorcode/",
-  "description": "교세라(Kyocera)·HP·삼성·캐논·엡손 등 7개 제조사 프린터·복합기 에러코드 17,146건의 원인과 해결 방법을 검색하는 무료 도구",
+  "description": "교세라(Kyocera)·브라더·신도리코·캐논·HP·삼성·엡손 등 9개 제조사 프린터·복합기 에러코드 16,787건의 원인과 해결 방법을 한글로 검색하는 무료 도구",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Web",
   "inLanguage": "ko",
@@ -778,6 +778,26 @@ html, body {
   font-size: 0.9rem;
   line-height: 1.6;
   color: var(--text);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.detail-original summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.detail-original summary::before {
+  content: '▸ ';
+}
+
+.detail-original[open] summary::before {
+  content: '▾ ';
+}
+
+.detail-original .detail-section-content {
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 
 /* ===== 모바일 반응형 ===== */
@@ -1224,12 +1244,26 @@ function search() {
     filtered = filtered.filter(e => e.category === category);
   }
   if (keyword) {
-    filtered = filtered.filter(e => {
-      return (e.code != null && String(e.code).toLowerCase().includes(keyword)) ||
-             (e.model && e.model.toLowerCase().includes(keyword)) ||
-             (e.cause && e.cause.toLowerCase().includes(keyword)) ||
-             (e.solution && e.solution.toLowerCase().includes(keyword));
-    });
+    // 코드는 하이픈·공백 무시 비교 (C-6000, SC 552 등), 코드 일치 → 모델 → 본문 순 정렬
+    const kwCode = normCode(keyword);
+    const rank = e => {
+      const c = normCode(e.code);
+      if (kwCode && c === kwCode) return 0;
+      if (kwCode && c.startsWith(kwCode)) return 1;
+      if ((e.code != null && String(e.code).toLowerCase().includes(keyword)) ||
+          (kwCode.length >= 2 && c.includes(kwCode))) return 2;
+      if (e.model && e.model.toLowerCase().includes(keyword)) return 3;
+      if ((e.cause && e.cause.toLowerCase().includes(keyword)) ||
+          (e.solution && e.solution.toLowerCase().includes(keyword)) ||
+          (e.tips && e.tips.toLowerCase().includes(keyword)) ||
+          (e.original && e.original.toLowerCase().includes(keyword))) return 4;
+      return -1;
+    };
+    filtered = filtered
+      .map(e => [rank(e), e])
+      .filter(x => x[0] >= 0)
+      .sort((a, b) => a[0] - b[0])
+      .map(x => x[1]);
   }
 
   displayResults(filtered);
@@ -1330,6 +1364,13 @@ function showDetail(error) {
         <div class="detail-section-title">팁</div>
         <div class="detail-section-content">${esc(error.tips)}</div>
       </div>
+    ` : ''}
+
+    ${error.original ? `
+      <details class="detail-section detail-original">
+        <summary class="detail-section-title">원문 (영문 매뉴얼 표기)</summary>
+        <div class="detail-section-content">${esc(error.original)}</div>
+      </details>
     ` : ''}
   `;
 
