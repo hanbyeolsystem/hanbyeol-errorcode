@@ -1,18 +1,18 @@
 # 프린터 에러코드 검색 (한별시스템)
 
-> 프린터·복합기 에러코드 17,146건의 원인과 해결 방법을 무료로 검색하는 사이트.
-> 지원 제조사: Kyocera(교세라), HP, 삼성, 캐논, 엡손 등 7개사.
+> 프린터·복합기 에러코드 16,787건의 원인과 해결 방법을 한글로 무료 검색하는 사이트.
+> 지원 제조사: Kyocera(교세라), Brother(브라더), Sindoh(신도리코), Canon(캐논), Konica Minolta(코니카미놀타), Samsung(삼성), HP, Epson(엡손), Xerox(제록스) 9개사.
 
 ## 사이트 정보
 
 - 운영: 한별시스템 (대구, 프린터·복합기 임대 및 IT 유지관리 전문. 전화 053-588-7119)
-- 데이터: 제조사 서비스 매뉴얼 기반으로 정리한 에러코드 데이터베이스 17,146건
+- 데이터: 제조사 서비스 매뉴얼 기반으로 정리한 에러코드 데이터베이스 16,787건 (영문 매뉴얼 항목은 한글 번역, 영문 원문은 original 필드에 보존)
 - 각 에러코드는 [제조사 / 코드 번호 / 발생 원인 / 해결 방법 / 카테고리] 로 구성
 
 ## 주요 페이지
 
 - [검색 화면](https://hanbyeolsystem.github.io/hanbyeol-errorcode/): 제조사·카테고리·키워드로 검색
-- [전체 데이터(JSON)](https://hanbyeolsystem.github.io/hanbyeol-errorcode/errors_v2.json): 에러코드 17,146건 원본 데이터. 항목: model(기종), code(에러코드), cause(원인), solution(해결 방법), category(분류), manufacturer(제조사)
+- [전체 데이터(JSON)](https://hanbyeolsystem.github.io/hanbyeol-errorcode/errors_v2.json): 에러코드 16,787건 원본 데이터. 항목: model(기종), code(에러코드), cause(원인), solution(해결 방법), category(분류), manufacturer(제조사), tips(팁), original(영문 원문, 번역된 항목만)
 
 ## 인용 안내
 
