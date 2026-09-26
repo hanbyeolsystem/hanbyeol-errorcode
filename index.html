@@ -778,6 +778,26 @@ html, body {
   font-size: 0.9rem;
   line-height: 1.6;
   color: var(--text);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.detail-original summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.detail-original summary::before {
+  content: '▸ ';
+}
+
+.detail-original[open] summary::before {
+  content: '▾ ';
+}
+
+.detail-original .detail-section-content {
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 
 /* ===== 모바일 반응형 ===== */
@@ -1224,12 +1244,26 @@ function search() {
     filtered = filtered.filter(e => e.category === category);
   }
   if (keyword) {
-    filtered = filtered.filter(e => {
-      return (e.code != null && String(e.code).toLowerCase().includes(keyword)) ||
-             (e.model && e.model.toLowerCase().includes(keyword)) ||
-             (e.cause && e.cause.toLowerCase().includes(keyword)) ||
-             (e.solution && e.solution.toLowerCase().includes(keyword));
-    });
+    // 코드는 하이픈·공백 무시 비교 (C-6000, SC 552 등), 코드 일치 → 모델 → 본문 순 정렬
+    const kwCode = normCode(keyword);
+    const rank = e => {
+      const c = normCode(e.code);
+      if (kwCode && c === kwCode) return 0;
+      if (kwCode && c.startsWith(kwCode)) return 1;
+      if ((e.code != null && String(e.code).toLowerCase().includes(keyword)) ||
+          (kwCode.length >= 2 && c.includes(kwCode))) return 2;
+      if (e.model && e.model.toLowerCase().includes(keyword)) return 3;
+      if ((e.cause && e.cause.toLowerCase().includes(keyword)) ||
+          (e.solution && e.solution.toLowerCase().includes(keyword)) ||
+          (e.tips && e.tips.toLowerCase().includes(keyword)) ||
+          (e.original && e.original.toLowerCase().includes(keyword))) return 4;
+      return -1;
+    };
+    filtered = filtered
+      .map(e => [rank(e), e])
+      .filter(x => x[0] >= 0)
+      .sort((a, b) => a[0] - b[0])
+      .map(x => x[1]);
   }
 
   displayResults(filtered);
@@ -1330,6 +1364,13 @@ function showDetail(error) {
         <div class="detail-section-title">팁</div>
         <div class="detail-section-content">${esc(error.tips)}</div>
       </div>
+    ` : ''}
+
+    ${error.original ? `
+      <details class="detail-section detail-original">
+        <summary class="detail-section-title">원문 (영문 매뉴얼 표기)</summary>
+        <div class="detail-section-content">${esc(error.original)}</div>
+      </details>
     ` : ''}
   `;
 
